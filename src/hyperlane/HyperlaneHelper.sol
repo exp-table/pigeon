@@ -7,38 +7,19 @@ import "solady/utils/LibString.sol";
 import {TypeCasts} from "./lib/TypeCasts.sol";
 
 interface IMessageRecipient {
-    function handle(
-        uint32 _origin,
-        bytes32 _sender,
-        bytes calldata _message
-    ) external;
+    function handle(uint32 _origin, bytes32 _sender, bytes calldata _message) external;
 }
 
 contract HyperlaneHelper is Test {
-
-    function help(
-        address mailbox,
-        uint256 forkId,
-        Vm.Log[] calldata logs
-    ) external {
+    function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
         _help(mailbox, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs);
     }
 
-    function help(
-        address mailbox,
-        bytes32 dispatchSelector,
-        uint256 forkId,
-        Vm.Log[] calldata logs
-    ) external {
+    function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
         _help(mailbox, dispatchSelector, forkId, logs);
     }
 
-    function _help(
-        address mailbox,
-        bytes32 dispatchSelector,
-        uint256 forkId,
-        Vm.Log[] memory logs
-    ) internal {
+    function _help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs) internal {
         uint256 prevForkId = vm.activeFork();
         vm.selectFork(forkId);
         vm.startBroadcast(mailbox);

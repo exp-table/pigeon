@@ -3,11 +3,7 @@ pragma solidity >=0.6.11;
 
 library TypeCasts {
     // treat it as a null-terminated string of max 32 bytes
-    function coerceString(bytes32 _buf)
-        internal
-        pure
-        returns (string memory _newStr)
-    {
+    function coerceString(bytes32 _buf) internal pure returns (string memory _newStr) {
         uint8 _slen = 0;
         while (_slen < 32 && _buf[_slen] != 0) {
             _slen++;

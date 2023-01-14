@@ -6,24 +6,20 @@ import "forge-std/Test.sol";
 import "src/hyperlane/HyperlaneHelper.sol";
 
 interface IMailbox {
-    function dispatch(
-        uint32 _destinationDomain,
-        bytes32 _recipientAddress,
-        bytes calldata _messageBody
-    ) external returns (bytes32);
+    function dispatch(uint32 _destinationDomain, bytes32 _recipientAddress, bytes calldata _messageBody)
+        external
+        returns (bytes32);
 }
 
 interface IInterchainGasPaymaster {
-    function payForGas(
-        bytes32 _messageId,
-        uint32 _destinationDomain,
-        uint256 _gasAmount,
-        address _refundAddress
-    ) external payable;
+    function payForGas(bytes32 _messageId, uint32 _destinationDomain, uint256 _gasAmount, address _refundAddress)
+        external
+        payable;
 }
 
 contract Target {
     uint256 public value;
+
     function handle(uint32 _origin, bytes32 _sender, bytes calldata _message) external {
         value = abi.decode(_message, (uint256));
     }
@@ -33,13 +29,13 @@ contract AnotherTarget {
     uint256 public value;
     address public kevin;
     bytes32 public bob;
+
     function handle(uint32 _origin, bytes32 _sender, bytes calldata _message) external {
         (value, kevin, bob) = abi.decode(_message, (uint256, address, bytes32));
     }
 }
 
 contract HyperlaneHelperTest is Test {
-
     HyperlaneHelper hyperlaneHelper;
     Target target;
     AnotherTarget anotherTarget;

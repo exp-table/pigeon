@@ -18,7 +18,10 @@ interface ILayerZeroEndpoint {
 
 contract Target {
     uint256 public value;
-    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) external {
+
+    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload)
+        external
+    {
         value = abi.decode(_payload, (uint256));
     }
 }
@@ -27,13 +30,15 @@ contract AnotherTarget {
     uint256 public value;
     address public kevin;
     bytes32 public bob;
-    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) external {
+
+    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload)
+        external
+    {
         (value, kevin, bob) = abi.decode(_payload, (uint256, address, bytes32));
     }
 }
 
 contract LayerZeroHelperTest is Test {
-
     LayerZeroHelper lzHelper;
     Target target;
     AnotherTarget anotherTarget;
@@ -91,12 +96,21 @@ contract LayerZeroHelperTest is Test {
     function _someCrossChainFunctionInYourContract() internal {
         ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675);
         bytes memory remoteAndLocalAddresses = abi.encodePacked(address(target), address(this));
-        endpoint.send{value : 1 ether}(L2_ID, remoteAndLocalAddresses, abi.encode(uint256(12)), payable(msg.sender), address(0), "");
+        endpoint.send{value: 1 ether}(
+            L2_ID, remoteAndLocalAddresses, abi.encode(uint256(12)), payable(msg.sender), address(0), ""
+        );
     }
 
     function _aMoreFancyCrossChainFunctionInYourContract() internal {
         ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675);
         bytes memory remoteAndLocalAddresses = abi.encodePacked(address(anotherTarget), address(this));
-        endpoint.send{value : 1 ether}(L2_ID, remoteAndLocalAddresses, abi.encode(uint256(12), msg.sender, keccak256("bob")), payable(msg.sender), address(0), "");
+        endpoint.send{value: 1 ether}(
+            L2_ID,
+            remoteAndLocalAddresses,
+            abi.encode(uint256(12), msg.sender, keccak256("bob")),
+            payable(msg.sender),
+            address(0),
+            ""
+        );
     }
 }
