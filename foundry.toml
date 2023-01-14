@@ -1,0 +1,8 @@
+# Foundry Configuration File
+# Default definitions: https://github.com/gakonst/foundry/blob/b7917fa8491aedda4dd6db53fbb206ea233cd531/config/src/lib.rs#L782
+# See more config options at: https://github.com/gakonst/foundry/tree/master/config
+
+[profile.default]
+solc_version = '0.8.17'
+auto_detect_solc = false
+optimizer_runs = 1_000
