@@ -17,6 +17,9 @@ jobs:
         run: forge install
       - name: tests
         run: forge test
+        env:
+          ETH_MAINNET_RPC_URL: ${{ secrets.ETH_MAINNET_RPC_URL }}
+          POLYGON_MAINNET_RPC_URL: ${{ secrets.POLYGON_MAINNET_RPC_URL }}
 
   snapshot:
     runs-on: ubuntu-latest
@@ -33,6 +36,9 @@ jobs:
         run: forge build --sizes
       - name: check gas snapshots
         run: forge snapshot --check
+        env:
+          ETH_MAINNET_RPC_URL: ${{ secrets.ETH_MAINNET_RPC_URL }}
+          POLYGON_MAINNET_RPC_URL: ${{ secrets.POLYGON_MAINNET_RPC_URL }}
 
   # slither:
   #   runs-on: ubuntu-latest
