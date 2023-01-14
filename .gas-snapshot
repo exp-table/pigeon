@@ -1,1 +1,4 @@
-GreeterTest:testSetGm() (gas: 107432)
+HyperlaneHelperTest:testFancyHL() (gas: 147724)
+HyperlaneHelperTest:testSimpleHL() (gas: 99984)
+LayerZeroHelperTest:testFancyLZ() (gas: 299173)
+LayerZeroHelperTest:testSimpleLZ() (gas: 249925)
