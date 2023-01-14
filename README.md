@@ -8,6 +8,14 @@ A **Simple**, **Easy** tool to test cross-chain protocols.
 
 Pigeon is a set of helper contracts, one per cross-chain protocol, that is designed to help you simulate as closely as possible how the cross-chain transaction would go.
 
+## Installation
+
+To install with [**Foundry**](https://github.com/gakonst/foundry):
+
+```sh
+forge install exp-table/pigeon
+```
+
 ## Usage
 
 It is made to be as simple as instantiating the helper in your test file, and simple calling `help` with the appropriate parameters.
