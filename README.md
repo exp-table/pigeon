@@ -30,6 +30,14 @@ Vm.Log[] memory logs = vm.getRecordedLogs();
 hyperlaneHelper.help(0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70, L2_FORK_ID, logs);
 ```
 
+## Protocols support
+
+| Protocols      | Is supported  |
+| -------------  |:-------------:|
+| Hyperlane      | ✅            |   
+| LayerZero      | ✅            |
+| Stargate       | ✅            |
+
 **Warning**
 
 As of now, it only supports the message execution and is not sensible to gas limits (which is a function of the fee you pay to the protocols usually).
