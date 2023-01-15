@@ -47,6 +47,8 @@ contract LayerZeroHelperTest is Test {
     uint256 L2_FORK_ID;
     uint16 constant L1_ID = 101;
     uint16 constant L2_ID = 109;
+    address constant L1_lzEndpoint = 0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675;
+    address constant L2_lzEndpoint = 0x3c2269811836af69497E5F486A85D7316753cf62;
 
     string RPC_ETH_MAINNET = vm.envString("ETH_MAINNET_RPC_URL");
     string RPC_POLYGON_MAINNET = vm.envString("POLYGON_MAINNET_RPC_URL");
@@ -70,7 +72,7 @@ contract LayerZeroHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.help(0x3c2269811836af69497E5F486A85D7316753cf62, 100000, L2_FORK_ID, logs);
+        lzHelper.help(L2_lzEndpoint, 100000, L2_FORK_ID, logs);
         // /\
         // ||
         // ||
@@ -85,7 +87,7 @@ contract LayerZeroHelperTest is Test {
         vm.recordLogs();
         _aMoreFancyCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.help(0x3c2269811836af69497E5F486A85D7316753cf62, 100000, L2_FORK_ID, logs);
+        lzHelper.help(L2_lzEndpoint, 100000, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(anotherTarget.value(), 12);
@@ -94,7 +96,7 @@ contract LayerZeroHelperTest is Test {
     }
 
     function _someCrossChainFunctionInYourContract() internal {
-        ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675);
+        ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(L1_lzEndpoint);
         bytes memory remoteAndLocalAddresses = abi.encodePacked(address(target), address(this));
         endpoint.send{value: 1 ether}(
             L2_ID, remoteAndLocalAddresses, abi.encode(uint256(12)), payable(msg.sender), address(0), ""
@@ -102,7 +104,7 @@ contract LayerZeroHelperTest is Test {
     }
 
     function _aMoreFancyCrossChainFunctionInYourContract() internal {
-        ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675);
+        ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(L1_lzEndpoint);
         bytes memory remoteAndLocalAddresses = abi.encodePacked(address(anotherTarget), address(this));
         endpoint.send{value: 1 ether}(
             L2_ID,

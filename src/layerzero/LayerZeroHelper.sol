@@ -41,7 +41,7 @@ contract LayerZeroHelper is Test {
         _help(endpoint, defaultLibrary, gasToSend, eventSelector, forkId, logs);
     }
 
-    function _help(
+    function _help( 
         address endpoint,
         address defaultLibrary,
         uint256 gasToSend,
@@ -53,7 +53,6 @@ contract LayerZeroHelper is Test {
         vm.selectFork(forkId);
         // larps as default library
         vm.startBroadcast(defaultLibrary);
-        console.log(logs[logs.length - 1].emitter);
         for (uint256 i; i < logs.length; i++) {
             Vm.Log memory log = logs[i];
             // unsure if the default library always emits the event
