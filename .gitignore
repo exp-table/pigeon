@@ -19,4 +19,4 @@ broadcast
 
 package-lock.json
 node_modules
-utils/*.js
+utils/scripts/*.js

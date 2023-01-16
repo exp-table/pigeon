@@ -11,15 +11,15 @@ interface IMessageRecipient {
 }
 
 contract HyperlaneHelper is Test {
-    function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
-        return _help(mailbox, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs);
+    function help(address mailbox, uint32 originDomain, uint256 forkId, Vm.Log[] calldata logs) external {
+        return _help(mailbox, originDomain, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs);
     }
 
-    function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(mailbox, dispatchSelector, forkId, logs);
+    function help(address mailbox, uint32 originDomain, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
+        _help(mailbox, originDomain, dispatchSelector, forkId, logs);
     }
 
-    function _help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs) internal {
+    function _help(address mailbox, uint32 originDomain, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs) internal {
         uint256 prevForkId = vm.activeFork();
         vm.selectFork(forkId);
         vm.startBroadcast(mailbox);
@@ -31,7 +31,7 @@ contract HyperlaneHelper is Test {
                 bytes32 recipient = log.topics[3];
                 bytes memory message = abi.decode(log.data, (bytes));
 
-                uint256 gasEstimate = _estimateGas(0, destinationDomain, _handle(message));
+                uint256 gasEstimate = _estimateGas(originDomain, destinationDomain, _handle(message));
                 emit log_named_uint("gasEstimate", gasEstimate);
             }
         }
@@ -39,7 +39,7 @@ contract HyperlaneHelper is Test {
         vm.selectFork(prevForkId);
     }
 
-    function _estimateGas(uint32 origin, uint32 destination, uint256 handleGas)
+    function _estimateGas(uint32 originDomain, uint32 destinationDomain, uint256 handleGas)
         internal
         returns (uint256 gasEstimate)
     {
@@ -52,8 +52,8 @@ contract HyperlaneHelper is Test {
         cmds[3] = "utils/scripts/";
         cmds[4] = "run";
         cmds[5] = "estimateHLGas";
-        cmds[6] = LibString.toHexString(origin);
-        cmds[7] = LibString.toHexString(destination);
+        cmds[6] = LibString.toHexString(originDomain);
+        cmds[7] = LibString.toHexString(destinationDomain);
         cmds[8] = LibString.toString(handleGas);
 
         bytes memory result = vm.ffi(cmds);
