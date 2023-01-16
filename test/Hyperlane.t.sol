@@ -42,8 +42,8 @@ contract HyperlaneHelperTest is Test {
 
     uint256 L1_FORK_ID;
     uint256 L2_FORK_ID;
-    uint32 constant L1_DOMAIN = 0x657468;
-    uint32 constant L2_DOMAIN = 0x706f6c79;
+    uint32 constant L1_DOMAIN = 1;
+    uint32 constant L2_DOMAIN = 137;
 
     string RPC_ETH_MAINNET = vm.envString("ETH_MAINNET_RPC_URL");
     string RPC_POLYGON_MAINNET = vm.envString("POLYGON_MAINNET_RPC_URL");
