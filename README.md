@@ -16,12 +16,17 @@ To install with [**Foundry**](https://github.com/gakonst/foundry):
 forge install exp-table/pigeon
 ```
 
+To enable gas estimation, from the [utils directory](./utils/):
+```
+npm install
+```
+
 ## Usage
 
 It is made to be as simple as instantiating the helper in your test file, and simple calling `help` with the appropriate parameters.
 We have provided examples in the test files.
 
-In short, it looks like this (for Hyperlane) :
+In short, it looks like this (for Hyperlane):
 
 ```js
 vm.recordLogs();

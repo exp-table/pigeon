@@ -9,7 +9,7 @@
     "typescript": "^4.9.4"
   },
   "scripts": {
-    "compile": "npx tsc .utils/*.ts",
-    "estimateHLGas": "node utils/estimateHLGas.js"
+    "compile": "npx tsc ./*.ts",
+    "estimateHLGas": "node estimateHLGas.js"
   }
 }
