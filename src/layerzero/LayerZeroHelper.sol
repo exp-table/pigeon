@@ -41,7 +41,7 @@ contract LayerZeroHelper is Test {
         _help(endpoint, defaultLibrary, gasToSend, eventSelector, forkId, logs);
     }
 
-    function _help( 
+    function _help(
         address endpoint,
         address defaultLibrary,
         uint256 gasToSend,

@@ -11,6 +11,7 @@ interface IStargateRouter {
         uint256 dstNativeAmount;
         bytes dstNativeAddr;
     }
+
     function swap(
         uint16 _dstChainId,
         uint256 _srcPoolId,
@@ -32,10 +33,11 @@ interface IERC20 {
 
 contract Target {
     uint256 public value;
+
     function sgReceive(
         uint16 _srcChainId,
         bytes memory _srcAddress,
-        uint256 _nonce,                  
+        uint256 _nonce,
         address _token,
         uint256 amountLD,
         bytes memory payload
@@ -48,15 +50,16 @@ contract AnotherTarget {
     uint256 public value;
     address public kevin;
     bytes32 public bob;
+
     function sgReceive(
         uint16 _srcChainId,
         bytes memory _srcAddress,
-        uint256 _nonce,                  
+        uint256 _nonce,
         address _token,
         uint256 amountLD,
         bytes memory payload
     ) external {
-       (value, kevin, bob) = abi.decode(payload, (uint256, address, bytes32));
+        (value, kevin, bob) = abi.decode(payload, (uint256, address, bytes32));
     }
 }
 
@@ -83,7 +86,7 @@ contract StargateHelperTest is Test {
         lzHelper = new LayerZeroHelper();
 
         vm.broadcast(0x28C6c06298d514Db089934071355E5743bf21d60); // big boi USDC holder
-        L1token.transfer(address(this), 10**9);
+        L1token.transfer(address(this), 10 ** 9);
 
         L2_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET, 38063686);
         target = new Target();
@@ -108,7 +111,7 @@ contract StargateHelperTest is Test {
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
         // tolerated margin of $2
-        assertApproxEqAbs(L2token.balanceOf(address(target)), 10**9, 2 * 10**6);
+        assertApproxEqAbs(L2token.balanceOf(address(target)), 10 ** 9, 2 * 10 ** 6);
     }
 
     function testFancySG() external {
@@ -123,36 +126,36 @@ contract StargateHelperTest is Test {
         assertEq(anotherTarget.value(), 12);
         assertEq(anotherTarget.kevin(), msg.sender);
         assertEq(anotherTarget.bob(), keccak256("bob"));
-        assertApproxEqAbs(L2token.balanceOf(address(anotherTarget)), 10**9, 2 * 10**6);
+        assertApproxEqAbs(L2token.balanceOf(address(anotherTarget)), 10 ** 9, 2 * 10 ** 6);
     }
 
     function _someCrossChainFunctionInYourContract() internal {
-        L1token.approve(L1_sgRouter, 10**9);
+        L1token.approve(L1_sgRouter, 10 ** 9);
         IStargateRouter(L1_sgRouter).swap{value: 1 ether}(
             L2_ID,
             1,
             1,
             payable(msg.sender),
-            10**9,
+            10 ** 9,
             0,
             IStargateRouter.lzTxObj(200000, 0, "0x"),
             abi.encodePacked(address(target)),
-            abi.encode(uint(12))
+            abi.encode(uint256(12))
         );
     }
 
     function _aMoreFancyCrossChainFunctionInYourContract() internal {
-        L1token.approve(L1_sgRouter, 10**9);
+        L1token.approve(L1_sgRouter, 10 ** 9);
         IStargateRouter(L1_sgRouter).swap{value: 1 ether}(
             L2_ID,
             1,
             1,
             payable(msg.sender),
-            10**9,
+            10 ** 9,
             0,
             IStargateRouter.lzTxObj(200000, 0, "0x"),
             abi.encodePacked(address(anotherTarget)),
-            abi.encode(uint(12), msg.sender, keccak256("bob"))
+            abi.encode(uint256(12), msg.sender, keccak256("bob"))
         );
     }
 }

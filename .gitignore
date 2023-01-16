@@ -16,3 +16,7 @@ broadcast
 # Ignore local misc files
 .DS_Store
 *.pem
+
+package-lock.json
+node_modules
+utils/*.js

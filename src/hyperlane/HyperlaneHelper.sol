@@ -11,15 +11,49 @@ interface IMessageRecipient {
 }
 
 contract HyperlaneHelper is Test {
-    function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(mailbox, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs);
+    function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs)
+        external
+        returns (uint256[] memory handleGasAmounts)
+    {
+        return _help(mailbox, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs);
     }
 
-    function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(mailbox, dispatchSelector, forkId, logs);
+    function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs)
+        external
+        returns (uint256[] memory handleGasAmounts)
+    {
+        return _help(mailbox, dispatchSelector, forkId, logs);
     }
 
-    function _help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs) internal {
+    function estimateGas(uint32 origin, uint32 destination, uint256 handleGas) external {
+        uint256 gasEstimate = _estimateGas(origin, destination, handleGas);
+        emit log_named_uint("gasEstimate", gasEstimate);
+    }
+
+    function _estimateGas(uint32 origin, uint32 destination, uint256 handleGas)
+        internal
+        returns (uint256 gasEstimate)
+    {
+        string[] memory cmds = new string[](7);
+
+        // Build ffi command string
+        cmds[0] = "npm";
+        cmds[1] = "--silent";
+        cmds[2] = "run";
+        cmds[3] = "estimateHLGas";
+        cmds[4] = LibString.toHexString(origin);
+        cmds[5] = LibString.toHexString(destination);
+        cmds[6] = LibString.toString(handleGas);
+
+        bytes memory result = vm.ffi(cmds);
+        gasEstimate = abi.decode(result, (uint256));
+    }
+
+    function _help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs)
+        internal
+        returns (uint256[] memory handleGasAmounts)
+    {
+        handleGasAmounts = new uint256[](logs.length);
         uint256 prevForkId = vm.activeFork();
         vm.selectFork(forkId);
         vm.startBroadcast(mailbox);
@@ -30,14 +64,14 @@ contract HyperlaneHelper is Test {
                 uint32 destinationDomain = uint32(uint256(log.topics[2]));
                 bytes32 recipient = log.topics[3];
                 bytes memory message = abi.decode(log.data, (bytes));
-                _handle(message);
+                handleGasAmounts[i] = _handle(message);
             }
         }
         vm.stopBroadcast();
         vm.selectFork(prevForkId);
     }
 
-    function _handle(bytes memory message) internal {
+    function _handle(bytes memory message) internal returns (uint256 handleGas) {
         bytes32 _recipient;
         uint256 _originDomain;
         bytes32 _sender;
@@ -50,6 +84,8 @@ contract HyperlaneHelper is Test {
         address recipient = TypeCasts.bytes32ToAddress(_recipient);
         uint32 originDomain = uint32(_originDomain);
         bytes32 sender = _sender;
+        uint256 handleGasStart = gasleft();
         IMessageRecipient(recipient).handle(originDomain, sender, body);
+        handleGas = handleGasStart - gasleft();
     }
 }
