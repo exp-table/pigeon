@@ -16,9 +16,10 @@ To install with [**Foundry**](https://github.com/gakonst/foundry):
 forge install exp-table/pigeon
 ```
 
-To enable gas estimation, from the [utils directory](./utils/):
+To enable gas estimation, from the [utils/scripts directory](./utils/scripts), run the following command:
 ```
 npm install
+npm run compile
 ```
 
 ## Usage
@@ -34,6 +35,8 @@ _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(addr
 Vm.Log[] memory logs = vm.getRecordedLogs();
 hyperlaneHelper.help(0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70, L2_FORK_ID, logs);
 ```
+
+To display gas estimation, be sure to run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag.
 
 ## Protocols support
 
