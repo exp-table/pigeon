@@ -11,23 +11,32 @@ interface IMessageRecipient {
 }
 
 contract HyperlaneHelper is Test {
-    function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs)
-        external
-        returns (uint256[] memory handleGasAmounts)
-    {
+    function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
         return _help(mailbox, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs);
     }
 
-    function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs)
-        external
-        returns (uint256[] memory handleGasAmounts)
-    {
-        return _help(mailbox, dispatchSelector, forkId, logs);
+    function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
+        _help(mailbox, dispatchSelector, forkId, logs);
     }
 
-    function estimateGas(uint32 origin, uint32 destination, uint256 handleGas) external {
-        uint256 gasEstimate = _estimateGas(origin, destination, handleGas);
-        emit log_named_uint("gasEstimate", gasEstimate);
+    function _help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs) internal {
+        uint256 prevForkId = vm.activeFork();
+        vm.selectFork(forkId);
+        vm.startBroadcast(mailbox);
+        for (uint256 i; i < logs.length; i++) {
+            Vm.Log memory log = logs[i];
+            if (log.emitter == mailbox && log.topics[0] == dispatchSelector) {
+                bytes32 sender = log.topics[1];
+                uint32 destinationDomain = uint32(uint256(log.topics[2]));
+                bytes32 recipient = log.topics[3];
+                bytes memory message = abi.decode(log.data, (bytes));
+
+                uint256 gasEstimate = _estimateGas(0, destinationDomain, _handle(message));
+                emit log_named_uint("gasEstimate", gasEstimate);
+            }
+        }
+        vm.stopBroadcast();
+        vm.selectFork(prevForkId);
     }
 
     function _estimateGas(uint32 origin, uint32 destination, uint256 handleGas)
@@ -47,28 +56,6 @@ contract HyperlaneHelper is Test {
 
         bytes memory result = vm.ffi(cmds);
         gasEstimate = abi.decode(result, (uint256));
-    }
-
-    function _help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs)
-        internal
-        returns (uint256[] memory handleGasAmounts)
-    {
-        handleGasAmounts = new uint256[](logs.length);
-        uint256 prevForkId = vm.activeFork();
-        vm.selectFork(forkId);
-        vm.startBroadcast(mailbox);
-        for (uint256 i; i < logs.length; i++) {
-            Vm.Log memory log = logs[i];
-            if (log.emitter == mailbox && log.topics[0] == dispatchSelector) {
-                bytes32 sender = log.topics[1];
-                uint32 destinationDomain = uint32(uint256(log.topics[2]));
-                bytes32 recipient = log.topics[3];
-                bytes memory message = abi.decode(log.data, (bytes));
-                handleGasAmounts[i] = _handle(message);
-            }
-        }
-        vm.stopBroadcast();
-        vm.selectFork(prevForkId);
     }
 
     function _handle(bytes memory message) internal returns (uint256 handleGas) {

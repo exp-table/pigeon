@@ -15,6 +15,14 @@ interface ILayerZeroEndpoint {
         uint256 _gasLimit,
         bytes calldata _payload
     ) external;
+
+    function estimateFees(
+        uint16 _dstChainId,
+        address _userApplication,
+        bytes calldata _payload,
+        bool _payInZRO,
+        bytes calldata _adapterParam
+    ) external returns (uint256 nativeFee, uint256 zroFee);
 }
 
 contract LayerZeroHelper is Test {
@@ -71,9 +79,20 @@ contract LayerZeroHelper is Test {
                 ILayerZeroEndpoint(endpoint).receivePayload(
                     packet.srcChainId, path, packet.dstAddress, packet.nonce + 1, gasToSend, packet.payload
                 );
+
+                uint256 gasEstimate = _estimateGas(endpoint, packet.dstChainId, packet.dstAddress, packet.payload, false, "");
+                emit log_named_uint("gasEstimate", gasEstimate);
             }
         }
         vm.stopBroadcast();
         vm.selectFork(prevForkId);
+    }
+
+     function _estimateGas(address endpoint, uint16 destination, address userApplication, bytes memory payload, bool payInZRO, bytes memory adapterParam)
+        internal
+        returns (uint256 gasEstimate)
+    {
+        (uint256 nativeGas,) = ILayerZeroEndpoint(endpoint).estimateFees(destination, userApplication, payload, payInZRO, adapterParam);
+        return nativeGas;
     }
 }

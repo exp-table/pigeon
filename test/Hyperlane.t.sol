@@ -67,14 +67,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        uint256[] memory handleGasAmounts =
-            hyperlaneHelper.help(0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70, L2_FORK_ID, logs);
-
-        for (uint256 i = 0; i < handleGasAmounts.length; i++) {
-            if (handleGasAmounts[i] > 0) {
-                hyperlaneHelper.estimateGas(L1_DOMAIN, L2_DOMAIN, handleGasAmounts[i]);
-            }
-        }
+        hyperlaneHelper.help(0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70, L2_FORK_ID, logs);
         // /\
         // ||
         // ||
