@@ -11,15 +11,28 @@ interface IMessageRecipient {
 }
 
 contract HyperlaneHelper is Test {
-    function help(address mailbox, uint32 originDomain, uint256 forkId, Vm.Log[] calldata logs) external {
-        return _help(mailbox, originDomain, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs);
+    function help(address mailbox, uint32 originDomain, uint256 forkId, Vm.Log[] calldata logs, bool enableEstimates)
+        external
+    {
+        return _help(
+            mailbox, originDomain, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs, enableEstimates
+        );
     }
 
-    function help(address mailbox, uint32 originDomain, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(mailbox, originDomain, dispatchSelector, forkId, logs);
+    function help(
+        address mailbox,
+        uint32 originDomain,
+        bytes32 dispatchSelector,
+        uint256 forkId,
+        Vm.Log[] calldata logs,
+        bool enableEstimates
+    ) external {
+        _help(mailbox, originDomain, dispatchSelector, forkId, logs, enableEstimates);
     }
 
-    function _help(address mailbox, uint32 originDomain, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs) internal {
+    function _help(address mailbox, uint32 originDomain, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs, bool enableEstimates)
+        internal
+    {
         uint256 prevForkId = vm.activeFork();
         vm.selectFork(forkId);
         vm.startBroadcast(mailbox);
@@ -31,8 +44,12 @@ contract HyperlaneHelper is Test {
                 bytes32 recipient = log.topics[3];
                 bytes memory message = abi.decode(log.data, (bytes));
 
-                uint256 gasEstimate = _estimateGas(originDomain, destinationDomain, _handle(message));
-                emit log_named_uint("gasEstimate", gasEstimate);
+                uint256 handleGas = _handle(message);
+
+                if (enableEstimates) {
+                    uint256 gasEstimate = _estimateGas(originDomain, destinationDomain, handleGas);
+                    emit log_named_uint("gasEstimate", gasEstimate);
+                }
             }
         }
         vm.stopBroadcast();
