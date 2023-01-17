@@ -11,11 +11,9 @@ interface IMessageRecipient {
 }
 
 contract HyperlaneHelper is Test {
-    function help(address mailbox, uint32 originDomain, uint256 forkId, Vm.Log[] calldata logs, bool enableEstimates)
-        external
-    {
+    function help(address mailbox, uint32 originDomain, uint256 forkId, Vm.Log[] calldata logs) external {
         return _help(
-            mailbox, originDomain, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs, enableEstimates
+            mailbox, originDomain, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs
         );
     }
 
@@ -24,13 +22,12 @@ contract HyperlaneHelper is Test {
         uint32 originDomain,
         bytes32 dispatchSelector,
         uint256 forkId,
-        Vm.Log[] calldata logs,
-        bool enableEstimates
+        Vm.Log[] calldata logs
     ) external {
-        _help(mailbox, originDomain, dispatchSelector, forkId, logs, enableEstimates);
+        _help(mailbox, originDomain, dispatchSelector, forkId, logs);
     }
 
-    function _help(address mailbox, uint32 originDomain, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs, bool enableEstimates)
+    function _help(address mailbox, uint32 originDomain, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs)
         internal
     {
         uint256 prevForkId = vm.activeFork();
@@ -45,6 +42,8 @@ contract HyperlaneHelper is Test {
                 bytes memory message = abi.decode(log.data, (bytes));
 
                 uint256 handleGas = _handle(message);
+
+                bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
 
                 if (enableEstimates) {
                     uint256 gasEstimate = _estimateGas(originDomain, destinationDomain, handleGas);

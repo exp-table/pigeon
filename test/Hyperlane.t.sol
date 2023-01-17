@@ -42,7 +42,7 @@ contract HyperlaneHelperTest is Test {
 
     uint256 L1_FORK_ID;
     uint256 L2_FORK_ID;
-    
+
     uint32 constant L1_DOMAIN = 1;
     uint32 constant L2_DOMAIN = 137;
     address constant L1_hlMailbox = 0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70;
@@ -70,7 +70,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.help(L1_hlMailbox, L1_DOMAIN, L2_FORK_ID, logs, false);
+        hyperlaneHelper.help(L1_hlMailbox, L1_DOMAIN, L2_FORK_ID, logs);
         // /\
         // ||
         // ||
@@ -85,7 +85,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _aMoreFancyCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(anotherTarget)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.help(L1_hlMailbox, L1_DOMAIN, L2_FORK_ID, logs, false);
+        hyperlaneHelper.help(L1_hlMailbox, L1_DOMAIN, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(anotherTarget.value(), 12);

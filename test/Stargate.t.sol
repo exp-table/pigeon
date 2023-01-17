@@ -103,7 +103,7 @@ contract StargateHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.help(L2_lzEndpoint, 200000, L2_FORK_ID, logs, false);
+        lzHelper.help(L2_lzEndpoint, 200000, L2_FORK_ID, logs);
         // /\
         // ||
         // ||
@@ -120,7 +120,7 @@ contract StargateHelperTest is Test {
         vm.recordLogs();
         _aMoreFancyCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.help(L2_lzEndpoint, 200000, L2_FORK_ID, logs, false);
+        lzHelper.help(L2_lzEndpoint, 200000, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(anotherTarget.value(), 12);

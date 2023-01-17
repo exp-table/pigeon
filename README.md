@@ -16,7 +16,18 @@ To install with [**Foundry**](https://github.com/gakonst/foundry):
 forge install exp-table/pigeon
 ```
 
+Set environment variables:
+
+```sh
+ETH_MAINNET_RPC_URL=
+POLYGON_MAINNET_RPC_URL=
+
+# Optional
+ENABLE_ESTIMATES=
+```
+
 To enable gas estimation, from the [utils/scripts directory](./utils/scripts), run the following command:
+
 ```
 npm install
 npm run compile
@@ -36,15 +47,15 @@ Vm.Log[] memory logs = vm.getRecordedLogs();
 hyperlaneHelper.help(L1_DOMAIN, 0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70, L2_FORK_ID, logs);
 ```
 
-To display gas estimation, be sure to run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag.
+To display gas estimation, be sure to run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to true.
 
 ## Protocols support
 
-| Protocols      | Is supported  |
-| -------------  |:-------------:|
-| Hyperlane      | ✅            |   
-| LayerZero      | ✅            |
-| Stargate       | ✅            |
+| Protocols | Is supported |
+| --------- | :----------: |
+| Hyperlane |      ✅      |
+| LayerZero |      ✅      |
+| Stargate  |      ✅      |
 
 **Warning**
 
