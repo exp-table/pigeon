@@ -96,17 +96,7 @@ contract LayerZeroHelper is Test {
                 bytes memory payload = abi.decode(log.data, (bytes));
                 LayerZeroPacket.Packet memory packet = LayerZeroPacket.getPacket(payload);
 
-                bytes memory path = abi.encodePacked(packet.srcAddress, packet.dstAddress);
-                vm.store(
-                    address(endpoint),
-                    keccak256(
-                        abi.encodePacked(path, keccak256(abi.encodePacked(uint256(packet.srcChainId), uint256(5))))
-                    ),
-                    bytes32(uint256(packet.nonce))
-                );
-                ILayerZeroEndpoint(endpoint).receivePayload(
-                    packet.srcChainId, path, packet.dstAddress, packet.nonce + 1, gasToSend, packet.payload
-                );
+                _receivePayload(endpoint, packet, gasToSend);
 
                 if (enableEstimates) {
                     uint256 gasEstimate =
@@ -130,5 +120,18 @@ contract LayerZeroHelper is Test {
         (uint256 nativeGas,) =
             ILayerZeroEndpoint(endpoint).estimateFees(destination, userApplication, payload, payInZRO, adapterParam);
         return nativeGas;
+    }
+
+    function _receivePayload(address endpoint, LayerZeroPacket.Packet memory packet, uint256 gasToSend) internal {
+        bytes memory path = abi.encodePacked(packet.srcAddress, packet.dstAddress);
+        vm.store(
+            address(endpoint),
+            keccak256(abi.encodePacked(path, keccak256(abi.encodePacked(uint256(packet.srcChainId), uint256(5))))),
+            bytes32(uint256(packet.nonce))
+        );
+
+        ILayerZeroEndpoint(endpoint).receivePayload(
+            packet.srcChainId, path, packet.dstAddress, packet.nonce + 1, gasToSend, packet.payload
+        );
     }
 }
