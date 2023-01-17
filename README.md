@@ -38,16 +38,28 @@ npm run compile
 It is made to be as simple as instantiating the helper in your test file, and simple calling `help` with the appropriate parameters.
 We have provided examples in the test files.
 
-In short, it looks like this (for Hyperlane):
+Without gas estimation (Hyperlane):
 
 ```js
 vm.recordLogs();
 _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
 Vm.Log[] memory logs = vm.getRecordedLogs();
-hyperlaneHelper.help(L1_DOMAIN, 0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70, L2_FORK_ID, logs);
+hyperlaneHelper.help(L1_HLMailbox, L2_FORK_ID, logs);
 ```
 
-To display gas estimation, be sure to run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to true.
+With gas estimation (Hyperlane):
+
+```js
+vm.recordLogs();
+_someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
+Vm.Log[] memory logs = vm.getRecordedLogs();
+hyperlaneHelper.helpWithEstimates(L1_HLMailbox, L1_DOMAIN, L2_FORK_ID, logs);
+```
+
+To display estimations, be sure to run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to true.
+
+**Gas estimation** is the gas costs require in native tokens to pay for the message delivery.
+
 
 ## Protocols support
 

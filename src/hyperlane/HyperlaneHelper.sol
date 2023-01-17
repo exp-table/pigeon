@@ -11,25 +11,46 @@ interface IMessageRecipient {
 }
 
 contract HyperlaneHelper is Test {
-    function help(address mailbox, uint32 originDomain, uint256 forkId, Vm.Log[] calldata logs) external {
-        return _help(
-            mailbox, originDomain, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs
+    function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
+        return
+            _help(mailbox, 0, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs, false);
+    }
+
+    function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
+        _help(mailbox, 0, dispatchSelector, forkId, logs, false);
+    }
+
+    function helpWithEstimates(address mailbox, uint32 originDomain, uint256 forkId, Vm.Log[] calldata logs) external {
+        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        _help(
+            mailbox,
+            originDomain,
+            0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814,
+            forkId,
+            logs,
+            enableEstimates
         );
     }
 
-    function help(
+    function helpWithEstimates(
         address mailbox,
         uint32 originDomain,
         bytes32 dispatchSelector,
         uint256 forkId,
         Vm.Log[] calldata logs
     ) external {
-        _help(mailbox, originDomain, dispatchSelector, forkId, logs);
+        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        _help(mailbox, originDomain, dispatchSelector, forkId, logs, enableEstimates);
     }
 
-    function _help(address mailbox, uint32 originDomain, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] memory logs)
-        internal
-    {
+    function _help(
+        address mailbox,
+        uint32 originDomain,
+        bytes32 dispatchSelector,
+        uint256 forkId,
+        Vm.Log[] memory logs,
+        bool enableEstimates
+    ) internal {
         uint256 prevForkId = vm.activeFork();
         vm.selectFork(forkId);
         vm.startBroadcast(mailbox);
@@ -42,8 +63,6 @@ contract HyperlaneHelper is Test {
                 bytes memory message = abi.decode(log.data, (bytes));
 
                 uint256 handleGas = _handle(message);
-
-                bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
 
                 if (enableEstimates) {
                     uint256 gasEstimate = _estimateGas(originDomain, destinationDomain, handleGas);

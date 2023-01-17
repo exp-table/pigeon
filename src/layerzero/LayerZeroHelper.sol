@@ -27,16 +27,15 @@ interface ILayerZeroEndpoint {
 
 contract LayerZeroHelper is Test {
     // hardcoded defaultLibrary on ETH and Packet event selector
-    function help(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs)
-        external
-    {
+    function help(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
         _help(
             endpoint,
             0x4D73AdB72bC3DD368966edD0f0b2148401A178E2,
             gasToSend,
             0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82,
             forkId,
-            logs
+            logs,
+            false
         );
     }
 
@@ -48,7 +47,33 @@ contract LayerZeroHelper is Test {
         uint256 forkId,
         Vm.Log[] calldata logs
     ) external {
-        _help(endpoint, defaultLibrary, gasToSend, eventSelector, forkId, logs);
+        _help(endpoint, defaultLibrary, gasToSend, eventSelector, forkId, logs, false);
+    }
+
+    // hardcoded defaultLibrary on ETH and Packet event selector
+    function helpWithEstimates(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
+        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        _help(
+            endpoint,
+            0x4D73AdB72bC3DD368966edD0f0b2148401A178E2,
+            gasToSend,
+            0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82,
+            forkId,
+            logs,
+            enableEstimates
+        );
+    }
+
+    function helpWithEstimates(
+        address endpoint,
+        address defaultLibrary,
+        uint256 gasToSend,
+        bytes32 eventSelector,
+        uint256 forkId,
+        Vm.Log[] calldata logs
+    ) external {
+        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        _help(endpoint, defaultLibrary, gasToSend, eventSelector, forkId, logs, enableEstimates);
     }
 
     function _help(
@@ -57,7 +82,8 @@ contract LayerZeroHelper is Test {
         uint256 gasToSend,
         bytes32 eventSelector,
         uint256 forkId,
-        Vm.Log[] memory logs
+        Vm.Log[] memory logs,
+        bool enableEstimates
     ) internal {
         uint256 prevForkId = vm.activeFork();
         vm.selectFork(forkId);
@@ -81,8 +107,6 @@ contract LayerZeroHelper is Test {
                 ILayerZeroEndpoint(endpoint).receivePayload(
                     packet.srcChainId, path, packet.dstAddress, packet.nonce + 1, gasToSend, packet.payload
                 );
-
-                bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
 
                 if (enableEstimates) {
                     uint256 gasEstimate =

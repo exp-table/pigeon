@@ -114,6 +114,20 @@ contract StargateHelperTest is Test {
         assertApproxEqAbs(L2token.balanceOf(address(target)), 10 ** 9, 2 * 10 ** 6);
     }
 
+    function testSimpleSGWithEstimates() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+        _someCrossChainFunctionInYourContract();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        lzHelper.helpWithEstimates(L2_lzEndpoint, 200000, L2_FORK_ID, logs);
+
+        vm.selectFork(L2_FORK_ID);
+        assertEq(target.value(), 12);
+        // tolerated margin of $2
+        assertApproxEqAbs(L2token.balanceOf(address(target)), 10 ** 9, 2 * 10 ** 6);
+    }
+
     function testFancySG() external {
         vm.selectFork(L1_FORK_ID);
 
