@@ -56,9 +56,9 @@ Vm.Log[] memory logs = vm.getRecordedLogs();
 hyperlaneHelper.helpWithEstimates(L1_HLMailbox, L1_DOMAIN, L2_FORK_ID, logs);
 ```
 
-To display estimations, be sure to run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to true.
+To display estimations, be sure to run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to `true`.
 
-**Gas estimation** is the gas costs require in native tokens to pay for the message delivery.
+**Gas estimation** is the gas costs required in native tokens to pay for the message delivery.
 
 
 ## Protocols support
