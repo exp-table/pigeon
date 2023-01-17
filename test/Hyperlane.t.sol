@@ -42,8 +42,9 @@ contract HyperlaneHelperTest is Test {
 
     uint256 L1_FORK_ID;
     uint256 L2_FORK_ID;
-    uint32 constant L1_DOMAIN = 0x657468;
-    uint32 constant L2_DOMAIN = 0x706f6c79;
+    
+    uint32 constant L1_DOMAIN = 1;
+    uint32 constant L2_DOMAIN = 137;
     address constant L2_hlMailbox = 0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70;
     address constant L2_hlPaymaster = 0xdE86327fBFD04C4eA11dC0F270DA6083534c2582;
 
