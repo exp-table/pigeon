@@ -42,8 +42,11 @@ contract HyperlaneHelperTest is Test {
 
     uint256 L1_FORK_ID;
     uint256 L2_FORK_ID;
+
     uint32 constant L1_DOMAIN = 1;
     uint32 constant L2_DOMAIN = 137;
+    address constant L1_HLMailbox = 0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70;
+    address constant L1_HLPaymaster = 0xdE86327fBFD04C4eA11dC0F270DA6083534c2582;
 
     string RPC_ETH_MAINNET = vm.envString("ETH_MAINNET_RPC_URL");
     string RPC_POLYGON_MAINNET = vm.envString("POLYGON_MAINNET_RPC_URL");
@@ -67,10 +70,22 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.help(0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70, L2_FORK_ID, logs);
+        hyperlaneHelper.help(L1_HLMailbox, L2_FORK_ID, logs);
         // /\
         // ||
         // ||
+
+        vm.selectFork(L2_FORK_ID);
+        assertEq(target.value(), 12);
+    }
+
+    function testSimpleHLWithEstimates() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+        _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        hyperlaneHelper.helpWithEstimates(L1_HLMailbox, L1_DOMAIN, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
@@ -82,7 +97,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _aMoreFancyCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(anotherTarget)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.help(0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70, L2_FORK_ID, logs);
+        hyperlaneHelper.help(L1_HLMailbox, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(anotherTarget.value(), 12);
@@ -91,16 +106,16 @@ contract HyperlaneHelperTest is Test {
     }
 
     function _someCrossChainFunctionInYourContract(uint32 targetDomain, bytes32 L2Target) internal {
-        IMailbox mailbox = IMailbox(0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70);
+        IMailbox mailbox = IMailbox(L1_HLMailbox);
         bytes32 id = mailbox.dispatch(targetDomain, L2Target, abi.encode(uint256(12)));
-        IInterchainGasPaymaster paymaster = IInterchainGasPaymaster(0xdE86327fBFD04C4eA11dC0F270DA6083534c2582);
+        IInterchainGasPaymaster paymaster = IInterchainGasPaymaster(L1_HLPaymaster);
         paymaster.payForGas(id, targetDomain, 100000, msg.sender);
     }
 
     function _aMoreFancyCrossChainFunctionInYourContract(uint32 targetDomain, bytes32 L2Target) internal {
-        IMailbox mailbox = IMailbox(0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70);
+        IMailbox mailbox = IMailbox(L1_HLMailbox);
         bytes32 id = mailbox.dispatch(targetDomain, L2Target, abi.encode(uint256(12), msg.sender, keccak256("bob")));
-        IInterchainGasPaymaster paymaster = IInterchainGasPaymaster(0xdE86327fBFD04C4eA11dC0F270DA6083534c2582);
+        IInterchainGasPaymaster paymaster = IInterchainGasPaymaster(L1_HLPaymaster);
         paymaster.payForGas(id, targetDomain, 100000, msg.sender);
     }
 }

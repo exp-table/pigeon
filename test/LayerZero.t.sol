@@ -81,6 +81,18 @@ contract LayerZeroHelperTest is Test {
         assertEq(target.value(), 12);
     }
 
+    function testSimpleLZWithEstimates() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+        _someCrossChainFunctionInYourContract();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        lzHelper.helpWithEstimates(L2_lzEndpoint, 100000, L2_FORK_ID, logs);
+
+        vm.selectFork(L2_FORK_ID);
+        assertEq(target.value(), 12);
+    }
+
     function testFancyLZ() external {
         vm.selectFork(L1_FORK_ID);
 
