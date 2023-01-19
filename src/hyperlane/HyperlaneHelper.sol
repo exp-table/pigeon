@@ -51,7 +51,7 @@ contract HyperlaneHelper is Test {
                 bytes32 recipient = log.topics[3];
                 bytes memory message = abi.decode(log.data, (bytes));
 
-                uint256 handleGas = _handle(message, destinationDomain, enableEstimates);
+                _handle(message, destinationDomain, enableEstimates);
             }
         }
         vm.stopBroadcast();
