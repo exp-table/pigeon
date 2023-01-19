@@ -45,8 +45,11 @@ contract HyperlaneHelperTest is Test {
 
     uint32 constant L1_DOMAIN = 1;
     uint32 constant L2_DOMAIN = 137;
+
     address constant L1_HLMailbox = 0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70;
     address constant L1_HLPaymaster = 0xdE86327fBFD04C4eA11dC0F270DA6083534c2582;
+    address constant L2_HLMailbox = 0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70;
+    address constant L2_HLPaymaster = 0xdE86327fBFD04C4eA11dC0F270DA6083534c2582;
 
     string RPC_ETH_MAINNET = vm.envString("ETH_MAINNET_RPC_URL");
     string RPC_POLYGON_MAINNET = vm.envString("POLYGON_MAINNET_RPC_URL");
@@ -70,7 +73,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.help(L1_HLMailbox, L2_FORK_ID, logs);
+        hyperlaneHelper.help(L2_HLMailbox, L2_FORK_ID, logs);
         // /\
         // ||
         // ||
@@ -85,7 +88,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.helpWithEstimates(L1_HLMailbox, L1_DOMAIN, L2_FORK_ID, logs);
+        hyperlaneHelper.helpWithEstimates(L2_HLMailbox, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
@@ -97,7 +100,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _aMoreFancyCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(anotherTarget)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.help(L1_HLMailbox, L2_FORK_ID, logs);
+        hyperlaneHelper.help(L2_HLMailbox, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(anotherTarget.value(), 12);
