@@ -44,7 +44,7 @@ Without gas estimation (Hyperlane):
 vm.recordLogs();
 _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
 Vm.Log[] memory logs = vm.getRecordedLogs();
-hyperlaneHelper.help(L1_HLMailbox, L2_FORK_ID, logs);
+hyperlaneHelper.help(L2_HLMailbox, L2_FORK_ID, logs);
 ```
 
 With gas estimation (Hyperlane):
@@ -53,7 +53,7 @@ With gas estimation (Hyperlane):
 vm.recordLogs();
 _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
 Vm.Log[] memory logs = vm.getRecordedLogs();
-hyperlaneHelper.helpWithEstimates(L1_HLMailbox, L2_FORK_ID, logs);
+hyperlaneHelper.helpWithEstimates(L2_HLMailbox, L2_FORK_ID, logs);
 ```
 
 To display estimations, be sure to run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to `true`.
