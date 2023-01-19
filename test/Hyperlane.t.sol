@@ -85,7 +85,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.helpWithEstimates(L1_HLMailbox, L1_DOMAIN, L2_FORK_ID, logs);
+        hyperlaneHelper.helpWithEstimates(L1_HLMailbox, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
