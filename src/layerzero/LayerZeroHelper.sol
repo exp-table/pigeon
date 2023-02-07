@@ -70,8 +70,8 @@ contract LayerZeroHelper is Test {
         _help(endpoint, defaultLibrary, gasToSend, eventSelector, forkId, logs, enableEstimates);
     }
 
-    function findEvents(Vm.Log[] calldata logs, uint256 length) external pure returns (uint256[] memory indexes) {
-        return _findEvents(logs, PACKET_SELECTOR, length);
+    function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory lzLogs) {
+        return _findLogs(logs, PACKET_SELECTOR, length);
     }
 
     function _help(
@@ -138,18 +138,18 @@ contract LayerZeroHelper is Test {
         }
     }
 
-    function _findEvents(Vm.Log[] memory logs, bytes32 eventSelector, uint256 length)
+    function _findLogs(Vm.Log[] memory logs, bytes32 eventSelector, uint256 length)
         internal
         pure
-        returns (uint256[] memory indexes)
+        returns (Vm.Log[] memory lzLogs)
     {
-        indexes = new uint256[](length);
+        lzLogs = new Vm.Log[](length);
 
         uint256 currentIndex = 0;
 
         for (uint256 i = 0; i < logs.length; i++) {
             if (logs[i].topics[0] == eventSelector) {
-                indexes[currentIndex] = i;
+                lzLogs[currentIndex] = logs[i];
                 currentIndex++;
 
                 if (currentIndex == length) {

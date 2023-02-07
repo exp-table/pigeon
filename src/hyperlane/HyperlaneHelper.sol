@@ -33,8 +33,8 @@ contract HyperlaneHelper is Test {
         _help(mailbox, dispatchSelector, forkId, logs, enableEstimates);
     }
 
-    function findEvents(Vm.Log[] calldata logs, uint256 length) external pure returns (uint256[] memory indexes) {
-        return _findEvents(logs, DISPATCH_SELECTOR, length);
+    function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory hlLogs) {
+        return _findLogs(logs, DISPATCH_SELECTOR, length);
     }
 
     function _help(
@@ -106,18 +106,18 @@ contract HyperlaneHelper is Test {
         }
     }
 
-    function _findEvents(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
+    function _findLogs(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
         internal
         pure
-        returns (uint256[] memory indexes)
+        returns (Vm.Log[] memory HLLogs)
     {
-        indexes = new uint256[](length);
+        HLLogs = new Vm.Log[](length);
 
         uint256 currentIndex = 0;
 
         for (uint256 i = 0; i < logs.length; i++) {
             if (logs[i].topics[0] == dispatchSelector) {
-                indexes[currentIndex] = i;
+                HLLogs[currentIndex] = logs[i];
                 currentIndex++;
 
                 if (currentIndex == length) {

@@ -115,10 +115,10 @@ contract HyperlaneHelperTest is Test {
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         _someOtherCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        uint256[] memory indexes = hyperlaneHelper.findEvents(logs, 2);
+        Vm.Log[] memory HLLogs = hyperlaneHelper.findLogs(logs, 2);
         Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
-        reorderedLogs[0] = logs[indexes[1]];
-        reorderedLogs[1] = logs[indexes[0]];
+        reorderedLogs[0] = HLLogs[1];
+        reorderedLogs[1] = HLLogs[0];
         hyperlaneHelper.help(L2_HLMailbox, L2_FORK_ID, reorderedLogs);
 
         vm.selectFork(L2_FORK_ID);

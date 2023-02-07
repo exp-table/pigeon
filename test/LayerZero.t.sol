@@ -114,10 +114,10 @@ contract LayerZeroHelperTest is Test {
         _someCrossChainFunctionInYourContract();
         _someOtherCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        uint256[] memory indexes = lzHelper.findEvents(logs, 2);
+        Vm.Log[] memory lzLogs = lzHelper.findLogs(logs, 2);
         Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
-        reorderedLogs[0] = logs[indexes[1]];
-        reorderedLogs[1] = logs[indexes[0]];
+        reorderedLogs[0] = lzLogs[1];
+        reorderedLogs[1] = lzLogs[0];
         lzHelper.help(L2_lzEndpoint, 100000, L2_FORK_ID, reorderedLogs);
 
         vm.selectFork(L2_FORK_ID);
