@@ -11,19 +11,19 @@ interface IMessageRecipient {
 }
 
 contract HyperlaneHelper is Test {
+    bytes32 constant DISPATCH_SELECTOR = 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814;
+
     function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
-        return _help(mailbox, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs, false);
+        return _help(mailbox, DISPATCH_SELECTOR, forkId, logs, false);
     }
 
     function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(mailbox, dispatchSelector, forkId, logs, false);
+        _help(mailbox, DISPATCH_SELECTOR, forkId, logs, false);
     }
 
     function helpWithEstimates(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
         bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
-        _help(
-            mailbox, 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814, forkId, logs, enableEstimates
-        );
+        _help(mailbox, DISPATCH_SELECTOR, forkId, logs, enableEstimates);
     }
 
     function helpWithEstimates(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs)
@@ -31,6 +31,10 @@ contract HyperlaneHelper is Test {
     {
         bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
         _help(mailbox, dispatchSelector, forkId, logs, enableEstimates);
+    }
+
+    function findEvents(Vm.Log[] calldata logs, uint256 length) external pure returns (uint256[] memory indexes) {
+        return _findEvents(logs, DISPATCH_SELECTOR, length);
     }
 
     function _help(
@@ -99,6 +103,27 @@ contract HyperlaneHelper is Test {
         if (enableEstimates) {
             uint256 gasEstimate = _estimateGas(originDomain, destinationDomain, handleGas);
             emit log_named_uint("gasEstimate", gasEstimate);
+        }
+    }
+
+    function _findEvents(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
+        internal
+        pure
+        returns (uint256[] memory indexes)
+    {
+        indexes = new uint256[](length);
+
+        uint256 currentIndex = 0;
+
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == dispatchSelector) {
+                indexes[currentIndex] = i;
+                currentIndex++;
+
+                if (currentIndex == length) {
+                    break;
+                }
+            }
         }
     }
 }

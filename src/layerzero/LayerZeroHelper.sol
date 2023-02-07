@@ -26,17 +26,11 @@ interface ILayerZeroEndpoint {
 }
 
 contract LayerZeroHelper is Test {
+    bytes32 constant PACKET_SELECTOR = 0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82;
+
     // hardcoded defaultLibrary on ETH and Packet event selector
     function help(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(
-            endpoint,
-            0x4D73AdB72bC3DD368966edD0f0b2148401A178E2,
-            gasToSend,
-            0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82,
-            forkId,
-            logs,
-            false
-        );
+        _help(endpoint, 0x4D73AdB72bC3DD368966edD0f0b2148401A178E2, gasToSend, PACKET_SELECTOR, forkId, logs, false);
     }
 
     function help(
@@ -57,7 +51,7 @@ contract LayerZeroHelper is Test {
             endpoint,
             0x4D73AdB72bC3DD368966edD0f0b2148401A178E2,
             gasToSend,
-            0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82,
+            PACKET_SELECTOR,
             forkId,
             logs,
             enableEstimates
@@ -74,6 +68,10 @@ contract LayerZeroHelper is Test {
     ) external {
         bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
         _help(endpoint, defaultLibrary, gasToSend, eventSelector, forkId, logs, enableEstimates);
+    }
+
+    function findEvents(Vm.Log[] calldata logs, uint256 length) external pure returns (uint256[] memory indexes) {
+        return _findEvents(logs, PACKET_SELECTOR, length);
     }
 
     function _help(
@@ -137,6 +135,27 @@ contract LayerZeroHelper is Test {
             uint256 gasEstimate =
                 _estimateGas(endpoint, packet.dstChainId, packet.dstAddress, packet.payload, false, "");
             emit log_named_uint("gasEstimate", gasEstimate);
+        }
+    }
+
+    function _findEvents(Vm.Log[] memory logs, bytes32 eventSelector, uint256 length)
+        internal
+        pure
+        returns (uint256[] memory indexes)
+    {
+        indexes = new uint256[](length);
+
+        uint256 currentIndex = 0;
+
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == eventSelector) {
+                indexes[currentIndex] = i;
+                currentIndex++;
+
+                if (currentIndex == length) {
+                    break;
+                }
+            }
         }
     }
 }

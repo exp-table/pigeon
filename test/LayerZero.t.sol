@@ -107,11 +107,36 @@ contract LayerZeroHelperTest is Test {
         assertEq(anotherTarget.bob(), keccak256("bob"));
     }
 
+    function testCustomOrderingLZ() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+        _someCrossChainFunctionInYourContract();
+        _someOtherCrossChainFunctionInYourContract();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        uint256[] memory indexes = lzHelper.findEvents(logs, 2);
+        Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
+        reorderedLogs[0] = logs[indexes[1]];
+        reorderedLogs[1] = logs[indexes[0]];
+        lzHelper.help(L2_lzEndpoint, 100000, L2_FORK_ID, reorderedLogs);
+
+        vm.selectFork(L2_FORK_ID);
+        assertEq(target.value(), 12);
+    }
+
     function _someCrossChainFunctionInYourContract() internal {
         ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(L1_lzEndpoint);
         bytes memory remoteAndLocalAddresses = abi.encodePacked(address(target), address(this));
         endpoint.send{value: 1 ether}(
             L2_ID, remoteAndLocalAddresses, abi.encode(uint256(12)), payable(msg.sender), address(0), ""
+        );
+    }
+
+    function _someOtherCrossChainFunctionInYourContract() internal {
+        ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(L1_lzEndpoint);
+        bytes memory remoteAndLocalAddresses = abi.encodePacked(address(target), address(this));
+        endpoint.send{value: 1 ether}(
+            L2_ID, remoteAndLocalAddresses, abi.encode(uint256(6)), payable(msg.sender), address(0), ""
         );
     }
 

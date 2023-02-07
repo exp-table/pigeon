@@ -108,9 +108,33 @@ contract HyperlaneHelperTest is Test {
         assertEq(anotherTarget.bob(), keccak256("bob"));
     }
 
+    function testCustomOrderingHL() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+        _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
+        _someOtherCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        uint256[] memory indexes = hyperlaneHelper.findEvents(logs, 2);
+        Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
+        reorderedLogs[0] = logs[indexes[1]];
+        reorderedLogs[1] = logs[indexes[0]];
+        hyperlaneHelper.help(L2_HLMailbox, L2_FORK_ID, reorderedLogs);
+
+        vm.selectFork(L2_FORK_ID);
+        assertEq(target.value(), 12);
+    }
+
     function _someCrossChainFunctionInYourContract(uint32 targetDomain, bytes32 L2Target) internal {
         IMailbox mailbox = IMailbox(L1_HLMailbox);
         bytes32 id = mailbox.dispatch(targetDomain, L2Target, abi.encode(uint256(12)));
+        IInterchainGasPaymaster paymaster = IInterchainGasPaymaster(L1_HLPaymaster);
+        paymaster.payForGas(id, targetDomain, 100000, msg.sender);
+    }
+
+    function _someOtherCrossChainFunctionInYourContract(uint32 targetDomain, bytes32 L2Target) internal {
+        IMailbox mailbox = IMailbox(L1_HLMailbox);
+        bytes32 id = mailbox.dispatch(targetDomain, L2Target, abi.encode(uint256(6)));
         IInterchainGasPaymaster paymaster = IInterchainGasPaymaster(L1_HLPaymaster);
         paymaster.payForGas(id, targetDomain, 100000, msg.sender);
     }
