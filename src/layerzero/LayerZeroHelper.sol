@@ -27,10 +27,11 @@ interface ILayerZeroEndpoint {
 
 contract LayerZeroHelper is Test {
     bytes32 constant PACKET_SELECTOR = 0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82;
+    address constant DEFAULT_LIBRARY = 0x4D73AdB72bC3DD368966edD0f0b2148401A178E2;
 
     // hardcoded defaultLibrary on ETH and Packet event selector
     function help(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(endpoint, 0x4D73AdB72bC3DD368966edD0f0b2148401A178E2, gasToSend, PACKET_SELECTOR, forkId, logs, false);
+        _help(endpoint, DEFAULT_LIBRARY, gasToSend, PACKET_SELECTOR, forkId, logs, false);
     }
 
     function help(
@@ -47,15 +48,7 @@ contract LayerZeroHelper is Test {
     // hardcoded defaultLibrary on ETH and Packet event selector
     function helpWithEstimates(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
         bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
-        _help(
-            endpoint,
-            0x4D73AdB72bC3DD368966edD0f0b2148401A178E2,
-            gasToSend,
-            PACKET_SELECTOR,
-            forkId,
-            logs,
-            enableEstimates
-        );
+        _help(endpoint, DEFAULT_LIBRARY, gasToSend, PACKET_SELECTOR, forkId, logs, enableEstimates);
     }
 
     function helpWithEstimates(

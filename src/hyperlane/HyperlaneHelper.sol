@@ -18,7 +18,7 @@ contract HyperlaneHelper is Test {
     }
 
     function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(mailbox, DISPATCH_SELECTOR, forkId, logs, false);
+        _help(mailbox, dispatchSelector, forkId, logs, false);
     }
 
     function helpWithEstimates(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
