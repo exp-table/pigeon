@@ -33,8 +33,16 @@ contract HyperlaneHelper is Test {
         _help(mailbox, dispatchSelector, forkId, logs, enableEstimates);
     }
 
-    function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory hlLogs) {
+    function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
         return _findLogs(logs, DISPATCH_SELECTOR, length);
+    }
+
+    function findLogs(Vm.Log[] calldata logs, bytes32 dispatchSelector, uint256 length)
+        external
+        pure
+        returns (Vm.Log[] memory HLLogs)
+    {
+        return _findLogs(logs, dispatchSelector, length);
     }
 
     function _help(
