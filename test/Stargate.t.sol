@@ -143,6 +143,28 @@ contract StargateHelperTest is Test {
         assertApproxEqAbs(L2token.balanceOf(address(anotherTarget)), 10 ** 9, 2 * 10 ** 6);
     }
 
+    function testCustomOrderingSG() external {
+        vm.selectFork(L1_FORK_ID);
+
+        // Deal more USDC
+        vm.broadcast(0x28C6c06298d514Db089934071355E5743bf21d60);
+        L1token.transfer(address(this), 10 ** 9);
+
+        vm.recordLogs();
+        _someCrossChainFunctionInYourContract();
+        _someOtherCrossChainFunctionInYourContract();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        Vm.Log[] memory lzLogs = lzHelper.findLogs(logs, 2);
+        Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
+        reorderedLogs[0] = lzLogs[1];
+        reorderedLogs[1] = lzLogs[0];
+        lzHelper.help(L2_lzEndpoint, 200000, L2_FORK_ID, reorderedLogs);
+
+        vm.selectFork(L2_FORK_ID);
+        assertEq(target.value(), 12);
+        assertApproxEqAbs(L2token.balanceOf(address(target)), 2 * 10 ** 9, 2 * 10 ** 6);
+    }
+
     function _someCrossChainFunctionInYourContract() internal {
         L1token.approve(L1_sgRouter, 10 ** 9);
         IStargateRouter(L1_sgRouter).swap{value: 1 ether}(
@@ -155,6 +177,21 @@ contract StargateHelperTest is Test {
             IStargateRouter.lzTxObj(200000, 0, "0x"),
             abi.encodePacked(address(target)),
             abi.encode(uint256(12))
+        );
+    }
+
+    function _someOtherCrossChainFunctionInYourContract() internal {
+        L1token.approve(L1_sgRouter, 10 ** 9);
+        IStargateRouter(L1_sgRouter).swap{value: 1 ether}(
+            L2_ID,
+            1,
+            1,
+            payable(msg.sender),
+            10 ** 9,
+            0,
+            IStargateRouter.lzTxObj(200000, 0, "0x"),
+            abi.encodePacked(address(target)),
+            abi.encode(uint256(6))
         );
     }
 
