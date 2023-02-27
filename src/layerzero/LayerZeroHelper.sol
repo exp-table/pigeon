@@ -67,7 +67,11 @@ contract LayerZeroHelper is Test {
         return _findLogs(logs, PACKET_SELECTOR, length);
     }
 
-    function findLogs(Vm.Log[] calldata logs, bytes32 eventSelector, uint256 length) external pure returns (Vm.Log[] memory lzLogs) {
+    function findLogs(Vm.Log[] calldata logs, bytes32 eventSelector, uint256 length)
+        external
+        pure
+        returns (Vm.Log[] memory lzLogs)
+    {
         return _findLogs(logs, eventSelector, length);
     }
 
