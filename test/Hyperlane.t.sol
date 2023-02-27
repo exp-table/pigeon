@@ -6,6 +6,8 @@ import "forge-std/Test.sol";
 import "src/hyperlane/HyperlaneHelper.sol";
 
 interface IMailbox {
+    event Dispatch(address indexed sender, uint32 indexed destination, bytes32 indexed recipient, bytes message);
+
     function dispatch(uint32 _destinationDomain, bytes32 _recipientAddress, bytes calldata _messageBody)
         external
         returns (bytes32);
@@ -73,7 +75,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.help(L2_HLMailbox, L2_FORK_ID, logs);
+        hyperlaneHelper.help(L1_HLMailbox, L2_HLMailbox, L2_FORK_ID, logs);
         // /\
         // ||
         // ||
@@ -88,7 +90,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.helpWithEstimates(L2_HLMailbox, L2_FORK_ID, logs);
+        hyperlaneHelper.helpWithEstimates(L1_HLMailbox, L2_HLMailbox, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
@@ -100,7 +102,7 @@ contract HyperlaneHelperTest is Test {
         vm.recordLogs();
         _aMoreFancyCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(anotherTarget)));
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        hyperlaneHelper.help(L2_HLMailbox, L2_FORK_ID, logs);
+        hyperlaneHelper.help(L1_HLMailbox, L2_HLMailbox, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(anotherTarget.value(), 12);
@@ -119,7 +121,7 @@ contract HyperlaneHelperTest is Test {
         Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
         reorderedLogs[0] = HLLogs[1];
         reorderedLogs[1] = HLLogs[0];
-        hyperlaneHelper.help(L2_HLMailbox, L2_FORK_ID, reorderedLogs);
+        hyperlaneHelper.help(L1_HLMailbox, L2_HLMailbox, L2_FORK_ID, reorderedLogs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);

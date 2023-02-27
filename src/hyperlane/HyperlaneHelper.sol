@@ -13,24 +13,36 @@ interface IMessageRecipient {
 contract HyperlaneHelper is Test {
     bytes32 constant DISPATCH_SELECTOR = 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814;
 
-    function help(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
-        return _help(mailbox, DISPATCH_SELECTOR, forkId, logs, false);
+    function help(address fromMailbox, address toMailbox, uint256 forkId, Vm.Log[] calldata logs) external {
+        return _help(fromMailbox, toMailbox, DISPATCH_SELECTOR, forkId, logs, false);
     }
 
-    function help(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(mailbox, dispatchSelector, forkId, logs, false);
+    function help(
+        address fromMailbox,
+        address toMailbox,
+        bytes32 dispatchSelector,
+        uint256 forkId,
+        Vm.Log[] calldata logs
+    ) external {
+        _help(fromMailbox, toMailbox, dispatchSelector, forkId, logs, false);
     }
 
-    function helpWithEstimates(address mailbox, uint256 forkId, Vm.Log[] calldata logs) external {
-        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
-        _help(mailbox, DISPATCH_SELECTOR, forkId, logs, enableEstimates);
-    }
-
-    function helpWithEstimates(address mailbox, bytes32 dispatchSelector, uint256 forkId, Vm.Log[] calldata logs)
+    function helpWithEstimates(address fromMailbox, address toMailbox, uint256 forkId, Vm.Log[] calldata logs)
         external
     {
         bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
-        _help(mailbox, dispatchSelector, forkId, logs, enableEstimates);
+        _help(fromMailbox, toMailbox, DISPATCH_SELECTOR, forkId, logs, enableEstimates);
+    }
+
+    function helpWithEstimates(
+        address fromMailbox,
+        address toMailbox,
+        bytes32 dispatchSelector,
+        uint256 forkId,
+        Vm.Log[] calldata logs
+    ) external {
+        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        _help(fromMailbox, toMailbox, dispatchSelector, forkId, logs, enableEstimates);
     }
 
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
@@ -46,7 +58,8 @@ contract HyperlaneHelper is Test {
     }
 
     function _help(
-        address mailbox,
+        address fromMailbox,
+        address toMailbox,
         bytes32 dispatchSelector,
         uint256 forkId,
         Vm.Log[] memory logs,
@@ -54,10 +67,10 @@ contract HyperlaneHelper is Test {
     ) internal {
         uint256 prevForkId = vm.activeFork();
         vm.selectFork(forkId);
-        vm.startBroadcast(mailbox);
+        vm.startBroadcast(toMailbox);
         for (uint256 i; i < logs.length; i++) {
             Vm.Log memory log = logs[i];
-            if (log.emitter == mailbox && log.topics[0] == dispatchSelector) {
+            if (log.emitter == fromMailbox && log.topics[0] == dispatchSelector) {
                 bytes32 sender = log.topics[1];
                 uint32 destinationDomain = uint32(uint256(log.topics[2]));
                 bytes32 recipient = log.topics[3];
