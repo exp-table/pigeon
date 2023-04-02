@@ -7,8 +7,8 @@ import {
 import { ethers } from "ethers";
 
 // Usage: node estimateHLGas.js <origin> <destination> <handleGas>
-const origin = process.argv[2] as ChainName;
-const destination = process.argv[3] as ChainName;
+const origin = process.argv[2] || "ethereum";
+const destination = process.argv[3] || "polygon";
 const handleGas = process.argv[4] || 200000;
 
 const encoder = ethers.utils.defaultAbiCoder;

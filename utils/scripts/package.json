@@ -10,6 +10,6 @@
   },
   "scripts": {
     "compile": "npx tsc ./*.ts",
-    "estimateHLGas": "node estimateHLGas.js ethereum polygon"
+    "estimateHLGas": "node estimateHLGas.js"
   }
 }

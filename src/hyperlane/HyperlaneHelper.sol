@@ -112,7 +112,7 @@ contract HyperlaneHelper is Test {
         assembly {
             _sender := mload(add(message, 0x29))
             _recipient := mload(add(message, 0x4d))
-            _originDomain := and(mload(add(message, 0x2d)), 0xffffffff)
+            _originDomain := and(mload(add(message, 0x09)), 0xffffffff)
         }
         address recipient = TypeCasts.bytes32ToAddress(_recipient);
         uint32 originDomain = uint32(_originDomain);
