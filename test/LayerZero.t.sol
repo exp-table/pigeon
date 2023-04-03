@@ -31,9 +31,16 @@ contract AnotherTarget {
     address public kevin;
     bytes32 public bob;
 
+    uint16 expectedId;
+
+    constructor(uint16 _expectedId) {
+        expectedId = _expectedId;
+    }
+
     function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload)
         external
     {
+        require(_srcChainId == expectedId, "Unexpected id");
         (value, kevin, bob) = abi.decode(_payload, (uint256, address, bytes32));
     }
 }
@@ -59,7 +66,7 @@ contract LayerZeroHelperTest is Test {
 
         L2_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET, 38063686);
         target = new Target();
-        anotherTarget = new AnotherTarget();
+        anotherTarget = new AnotherTarget(L1_ID);
     }
 
     function testSimpleLZ() external {

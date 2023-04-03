@@ -32,7 +32,14 @@ contract AnotherTarget {
     address public kevin;
     bytes32 public bob;
 
+    uint32 expectedOrigin;
+
+    constructor(uint32 _expectedOrigin) {
+        expectedOrigin = _expectedOrigin;
+    }
+
     function handle(uint32 _origin, bytes32 _sender, bytes calldata _message) external {
+        require(_origin == expectedOrigin, "Unexpected origin");
         (value, kevin, bob) = abi.decode(_message, (uint256, address, bytes32));
     }
 }
@@ -62,7 +69,7 @@ contract HyperlaneHelperTest is Test {
 
         L2_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET, 38063686);
         target = new Target();
-        anotherTarget = new AnotherTarget();
+        anotherTarget = new AnotherTarget(L2_DOMAIN);
     }
 
     function testSimpleHL() external {

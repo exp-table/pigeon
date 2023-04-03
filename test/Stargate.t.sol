@@ -51,6 +51,12 @@ contract AnotherTarget {
     address public kevin;
     bytes32 public bob;
 
+    uint16 expectedId;
+
+    constructor(uint16 _expectedId) {
+        expectedId = _expectedId;
+    }
+
     function sgReceive(
         uint16 _srcChainId,
         bytes memory _srcAddress,
@@ -59,6 +65,7 @@ contract AnotherTarget {
         uint256 amountLD,
         bytes memory payload
     ) external {
+        require(_srcChainId == expectedId, "Unexpected id");
         (value, kevin, bob) = abi.decode(payload, (uint256, address, bytes32));
     }
 }
@@ -90,7 +97,7 @@ contract StargateHelperTest is Test {
 
         L2_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET, 38063686);
         target = new Target();
-        anotherTarget = new AnotherTarget();
+        anotherTarget = new AnotherTarget(L1_ID);
     }
 
     function testSimpleSG() external {
@@ -103,7 +110,7 @@ contract StargateHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.help(L2_lzEndpoint, 200000, L2_FORK_ID, logs);
+        lzHelper.help(L2_lzEndpoint, 500000, L2_FORK_ID, logs);
         // /\
         // ||
         // ||
@@ -120,7 +127,7 @@ contract StargateHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.helpWithEstimates(L2_lzEndpoint, 200000, L2_FORK_ID, logs);
+        lzHelper.helpWithEstimates(L2_lzEndpoint, 500000, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
@@ -134,7 +141,7 @@ contract StargateHelperTest is Test {
         vm.recordLogs();
         _aMoreFancyCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.help(L2_lzEndpoint, 200000, L2_FORK_ID, logs);
+        lzHelper.help(L2_lzEndpoint, 500000, L2_FORK_ID, logs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(anotherTarget.value(), 12);
@@ -158,7 +165,7 @@ contract StargateHelperTest is Test {
         Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
         reorderedLogs[0] = lzLogs[1];
         reorderedLogs[1] = lzLogs[0];
-        lzHelper.help(L2_lzEndpoint, 200000, L2_FORK_ID, reorderedLogs);
+        lzHelper.help(L2_lzEndpoint, 500000, L2_FORK_ID, reorderedLogs);
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
@@ -174,7 +181,7 @@ contract StargateHelperTest is Test {
             payable(msg.sender),
             10 ** 9,
             0,
-            IStargateRouter.lzTxObj(200000, 0, "0x"),
+            IStargateRouter.lzTxObj(500000, 0, "0x"),
             abi.encodePacked(address(target)),
             abi.encode(uint256(12))
         );
@@ -189,7 +196,7 @@ contract StargateHelperTest is Test {
             payable(msg.sender),
             10 ** 9,
             0,
-            IStargateRouter.lzTxObj(200000, 0, "0x"),
+            IStargateRouter.lzTxObj(500000, 0, "0x"),
             abi.encodePacked(address(target)),
             abi.encode(uint256(6))
         );
@@ -204,7 +211,7 @@ contract StargateHelperTest is Test {
             payable(msg.sender),
             10 ** 9,
             0,
-            IStargateRouter.lzTxObj(200000, 0, "0x"),
+            IStargateRouter.lzTxObj(500000, 0, "0x"),
             abi.encodePacked(address(anotherTarget)),
             abi.encode(uint256(12), msg.sender, keccak256("bob"))
         );
