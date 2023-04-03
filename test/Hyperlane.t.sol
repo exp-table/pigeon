@@ -69,7 +69,7 @@ contract HyperlaneHelperTest is Test {
 
         L2_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET, 38063686);
         target = new Target();
-        anotherTarget = new AnotherTarget(L2_DOMAIN);
+        anotherTarget = new AnotherTarget(L1_DOMAIN);
     }
 
     function testSimpleHL() external {
