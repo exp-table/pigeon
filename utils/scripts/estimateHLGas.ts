@@ -1,14 +1,14 @@
 import {
-  chainConnectionConfigs,
-  DomainIdToChainName,
   InterchainGasCalculator,
   MultiProvider,
   ChainName,
+  chainMetadata,
 } from "@hyperlane-xyz/sdk";
 import { ethers } from "ethers";
 
-const origin = DomainIdToChainName[process.argv[2]] || "ethereum";
-const destination = DomainIdToChainName[process.argv[3]] || "polygon";
+// Usage: node estimateHLGas.js <origin> <destination> <handleGas>
+const origin = process.argv[2] || "ethereum";
+const destination = process.argv[3] || "polygon";
 const handleGas = process.argv[4] || 200000;
 
 const encoder = ethers.utils.defaultAbiCoder;
@@ -16,14 +16,15 @@ const encoder = ethers.utils.defaultAbiCoder;
 const calculateGas = async () => {
   // Set up a MultiProvider with the default providers.
   const multiProvider = new MultiProvider({
-    arbitrum: chainConnectionConfigs.arbitrum,
-    avalanche: chainConnectionConfigs.avalanche,
-    bsc: chainConnectionConfigs.bsc,
-    celo: chainConnectionConfigs.celo,
-    ethereum: chainConnectionConfigs.ethereum,
-    optimism: chainConnectionConfigs.optimism,
-    polygon: chainConnectionConfigs.polygon,
-    moonbeam: chainConnectionConfigs.moonbeam,
+    arbitrum: chainMetadata.arbitrum,
+    avalanche: chainMetadata.avalanche,
+    bsc: chainMetadata.bsc,
+    celo: chainMetadata.celo,
+    ethereum: chainMetadata.ethereum,
+    optimism: chainMetadata.optimism,
+    polygon: chainMetadata.polygon,
+    moonbeam: chainMetadata.moonbeam,
+    gnosis: chainMetadata.gnosis,
   });
 
   // Create the calculator.

@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@hyperlane-xyz/sdk": "^1.0.0",
+    "@hyperlane-xyz/sdk": "^1.2.3",
     "ethers": "^5.7.2",
     "fs": "^0.0.1-security"
   },
