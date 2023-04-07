@@ -27,7 +27,9 @@ interface IStargateRouter {
 
 interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
+
     function balanceOf(address account) external view returns (uint256);
+
     function transfer(address to, uint256 amount) external returns (bool);
 }
 
@@ -118,7 +120,11 @@ contract StargateHelperTest is Test {
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
         // tolerated margin of $2
-        assertApproxEqAbs(L2token.balanceOf(address(target)), 10 ** 9, 2 * 10 ** 6);
+        assertApproxEqAbs(
+            L2token.balanceOf(address(target)),
+            10 ** 9,
+            2 * 10 ** 6
+        );
     }
 
     function testSimpleSGWithEstimates() external {
@@ -132,7 +138,11 @@ contract StargateHelperTest is Test {
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
         // tolerated margin of $2
-        assertApproxEqAbs(L2token.balanceOf(address(target)), 10 ** 9, 2 * 10 ** 6);
+        assertApproxEqAbs(
+            L2token.balanceOf(address(target)),
+            10 ** 9,
+            2 * 10 ** 6
+        );
     }
 
     function testFancySG() external {
@@ -147,7 +157,11 @@ contract StargateHelperTest is Test {
         assertEq(anotherTarget.value(), 12);
         assertEq(anotherTarget.kevin(), msg.sender);
         assertEq(anotherTarget.bob(), keccak256("bob"));
-        assertApproxEqAbs(L2token.balanceOf(address(anotherTarget)), 10 ** 9, 2 * 10 ** 6);
+        assertApproxEqAbs(
+            L2token.balanceOf(address(anotherTarget)),
+            10 ** 9,
+            2 * 10 ** 6
+        );
     }
 
     function testCustomOrderingSG() external {
@@ -169,7 +183,11 @@ contract StargateHelperTest is Test {
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
-        assertApproxEqAbs(L2token.balanceOf(address(target)), 2 * 10 ** 9, 2 * 10 ** 6);
+        assertApproxEqAbs(
+            L2token.balanceOf(address(target)),
+            2 * 10 ** 9,
+            2 * 10 ** 6
+        );
     }
 
     function _someCrossChainFunctionInYourContract() internal {
