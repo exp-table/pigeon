@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
 import "solady/utils/LibString.sol";
 
 import {TypeCasts} from "./lib/TypeCasts.sol";
@@ -22,7 +21,7 @@ contract HyperlaneHelper is Test {
     function help(
         address fromMailbox,
         address[] memory toMailbox,
-        uint32[] memory expDstDomains,
+        uint32[] memory expDstDomains, /// expected destination domain
         uint256[] memory forkId,
         Vm.Log[] calldata logs
     ) external {
@@ -70,7 +69,7 @@ contract HyperlaneHelper is Test {
     function helpWithEstimates(
         address fromMailbox,
         address[] memory toMailbox,
-        uint32[] memory expDstDomains,
+        uint32[] memory expDstDomains, /// expected destination domains
         uint256[] memory forkId,
         Vm.Log[] calldata logs
     ) external {
@@ -161,7 +160,7 @@ contract HyperlaneHelper is Test {
                 uint32 destinationDomain = uint32(uint256(log.topics[2]));
                 bytes32 recipient = log.topics[3];
                 bytes memory message = abi.decode(log.data, (bytes));
-                console.log(expDstDomain, destinationDomain);
+
                 if (expDstDomain == destinationDomain || expDstDomain == 0) {
                     _handle(message, destinationDomain, enableEstimates);
                 }
@@ -208,7 +207,7 @@ contract HyperlaneHelper is Test {
             _originDomain := and(mload(add(message, 0x09)), 0xffffffff)
         }
         address recipient = TypeCasts.bytes32ToAddress(_recipient);
-        console.log(recipient);
+
         uint32 originDomain = uint32(_originDomain);
         bytes32 sender = _sender;
         uint256 handleGas = gasleft();

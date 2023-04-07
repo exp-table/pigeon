@@ -34,7 +34,7 @@ contract LayerZeroHelper is Test {
     // handle atomic multi destination packets
     function help(
         address[] memory endpoints,
-        uint16[] memory expChainIds,
+        uint16[] memory expChainIds, /// expected chain ids
         uint256 gasToSend,
         uint256[] memory forkId,
         Vm.Log[] calldata logs
@@ -95,7 +95,7 @@ contract LayerZeroHelper is Test {
     // process multi destination payloads
     function helpWithEstimates(
         address[] memory endpoints,
-        uint16[] memory expChainIds,
+        uint16[] memory expChainIds, /// expected chain ids
         uint256 gasToSend,
         uint256 forkId,
         Vm.Log[] calldata logs

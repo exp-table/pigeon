@@ -39,6 +39,7 @@ jobs:
         env:
           ETH_MAINNET_RPC_URL: ${{ secrets.ETH_MAINNET_RPC_URL }}
           POLYGON_MAINNET_RPC_URL: ${{ secrets.POLYGON_MAINNET_RPC_URL }}
+          ARBITRUM_MAINNET_RPC_URL: ${{ secrets.ARBITRUM_MAINNET_RPC_URL }}
 
   # slither:
   #   runs-on: ubuntu-latest
