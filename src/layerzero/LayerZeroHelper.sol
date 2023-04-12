@@ -97,7 +97,7 @@ contract LayerZeroHelper is Test {
         address[] memory endpoints,
         uint16[] memory expChainIds, /// expected chain ids
         uint256 gasToSend,
-        uint256 forkId,
+        uint256[] memory forkId,
         Vm.Log[] calldata logs
     ) external {
         bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
@@ -108,7 +108,7 @@ contract LayerZeroHelper is Test {
                 DEFAULT_LIBRARY,
                 gasToSend,
                 PACKET_SELECTOR,
-                forkId,
+                forkId[i],
                 logs,
                 enableEstimates
             );
