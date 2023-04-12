@@ -73,7 +73,7 @@ contract HyperlaneHelper is Test {
         uint256[] memory forkId,
         Vm.Log[] calldata logs
     ) external {
-        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        bool enableEstimates = vm.envOr("ENABLE_HYPERLANE_ESTIMATES", false);
         for (uint256 i = 0; i < expDstDomains.length; i++) {
             _help(
                 fromMailbox,
@@ -93,7 +93,7 @@ contract HyperlaneHelper is Test {
         uint256 forkId,
         Vm.Log[] calldata logs
     ) external {
-        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        bool enableEstimates = vm.envOr("ENABLE_HYPERLANE_ESTIMATES", false);
         _help(
             fromMailbox,
             toMailbox,
@@ -112,7 +112,7 @@ contract HyperlaneHelper is Test {
         uint256 forkId,
         Vm.Log[] calldata logs
     ) external {
-        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        bool enableEstimates = vm.envOr("ENABLE_HYPERLANE_ESTIMATES", false);
         _help(
             fromMailbox,
             toMailbox,

@@ -5,24 +5,6 @@ import "forge-std/Test.sol";
 
 import "src/celer/CelerHelper.sol";
 
-interface IMessageBus {
-    /**
-     * @notice Send a message to a contract on another chain.
-     * Sender needs to make sure the uniqueness of the message Id, which is computed as
-     * hash(type.MessageOnly, sender, receiver, srcChainId, srcTxHash, dstChainId, message).
-     * If messages with the same Id are sent, only one of them will succeed at dst chain..
-     * A fee is charged in the native gas token.
-     * @param _receiver The address of the destination app contract.
-     * @param _dstChainId The destination chain ID.
-     * @param _message Arbitrary message bytes to be decoded by the destination app contract.
-     */
-    function sendMessage(
-        address _receiver,
-        uint256 _dstChainId,
-        bytes calldata _message
-    ) external payable;
-}
-
 contract Target {
     uint256 public value;
 
@@ -44,10 +26,42 @@ contract Target {
     }
 }
 
+contract AnotherTarget {
+    uint256 public value;
+    address public kevin;
+    bytes32 public bob;
+
+    uint64 expectedChainId;
+
+    enum ExecutionStatus {
+        Fail, // execution failed, finalized
+        Success, // execution succeeded, finalized
+        Retry // execution rejected, can retry later
+    }
+
+    constructor(uint64 _expectedChainId) {
+        expectedChainId = _expectedChainId;
+    }
+
+    function executeMessage(
+        address _sender,
+        uint64 _srcChainId,
+        bytes calldata _message,
+        address _executor
+    ) external payable returns (ExecutionStatus) {
+        require(_srcChainId == expectedChainId, "Unexpected origin");
+        (value, kevin, bob) = abi.decode(_message, (uint256, address, bytes32));
+
+        return ExecutionStatus.Success;
+    }
+}
+
 contract CelerHelperTest is Test {
     CelerHelper celerHelper;
     Target target;
     Target altTarget;
+
+    AnotherTarget anotherTarget;
 
     uint256 L1_FORK_ID;
     uint256 POLYGON_FORK_ID;
@@ -81,6 +95,7 @@ contract CelerHelperTest is Test {
 
         POLYGON_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET, 38063686);
         target = new Target();
+        anotherTarget = new AnotherTarget(L1_CHAIN_ID);
 
         ARBITRUM_FORK_ID = vm.createSelectFork(RPC_ARBITRUM_MAINNET, 38063686);
         altTarget = new Target();
@@ -106,6 +121,7 @@ contract CelerHelperTest is Test {
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         celerHelper.help(
+            L1_CHAIN_ID,
             L1_CelerMessageBus,
             POLYGON_CelerMessageBus,
             L2_1_CHAIN_ID,
@@ -117,6 +133,121 @@ contract CelerHelperTest is Test {
         assertEq(target.value(), CROSS_CHAIN_MESSAGE);
     }
 
+    function testSimpleCelerWithEstimates() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+        _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(target));
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        celerHelper.helpWithEstimates(
+            L1_CHAIN_ID,
+            L1_CelerMessageBus,
+            POLYGON_CelerMessageBus,
+            L2_1_CHAIN_ID,
+            POLYGON_FORK_ID,
+            logs
+        );
+
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(target.value(), CROSS_CHAIN_MESSAGE);
+    }
+
+    function testFancyCeler() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+        _aMoreFancyCrossChainFunctionInYourContract(
+            L2_1_CHAIN_ID,
+            address(anotherTarget)
+        );
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        celerHelper.helpWithEstimates(
+            L1_CHAIN_ID,
+            L1_CelerMessageBus,
+            POLYGON_CelerMessageBus,
+            L2_1_CHAIN_ID,
+            POLYGON_FORK_ID,
+            logs
+        );
+
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(anotherTarget.value(), 12);
+        assertEq(anotherTarget.kevin(), msg.sender);
+        assertEq(anotherTarget.bob(), keccak256("bob"));
+    }
+
+    function testCustomOrderingCeler() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+
+        _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(target));
+        _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(target));
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        Vm.Log[] memory CelerLogs = celerHelper.findLogs(logs, 2);
+        Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
+
+        reorderedLogs[0] = CelerLogs[1];
+        reorderedLogs[1] = CelerLogs[0];
+
+        celerHelper.help(
+            L1_CHAIN_ID,
+            L1_CelerMessageBus,
+            POLYGON_CelerMessageBus,
+            L2_1_CHAIN_ID,
+            POLYGON_FORK_ID,
+            reorderedLogs
+        );
+
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(target.value(), CROSS_CHAIN_MESSAGE);
+    }
+
+    function testMultiDstCeler() external {
+        vm.selectFork(L1_FORK_ID);
+        vm.recordLogs();
+
+        _manyCrossChainFunctionInYourContract(
+            [L2_1_CHAIN_ID, L2_2_CHAIN_ID],
+            [address(target), address(altTarget)]
+        );
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        celerHelper.help(
+            L1_CHAIN_ID,
+            L1_CelerMessageBus,
+            allDstMessageBus,
+            allDstChainIds,
+            allDstForks,
+            logs
+        );
+
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(target.value(), CROSS_CHAIN_MESSAGE);
+
+        vm.selectFork(ARBITRUM_FORK_ID);
+        assertEq(altTarget.value(), CROSS_CHAIN_MESSAGE);
+    }
+
+    function _manyCrossChainFunctionInYourContract(
+        uint64[2] memory dstChainIds,
+        address[2] memory receivers
+    ) internal {
+        IMessageBus bus = IMessageBus(L1_CelerMessageBus);
+
+        for (uint256 i = 0; i < dstChainIds.length; i++) {
+            bus.sendMessage{value: 2 ether}(
+                receivers[i],
+                dstChainIds[i],
+                abi.encode(CROSS_CHAIN_MESSAGE)
+            );
+        }
+    }
+
     function _someCrossChainFunctionInYourContract(
         uint64 dstChainId,
         address receiver
@@ -126,6 +257,18 @@ contract CelerHelperTest is Test {
             receiver,
             dstChainId,
             abi.encode(CROSS_CHAIN_MESSAGE)
+        );
+    }
+
+    function _aMoreFancyCrossChainFunctionInYourContract(
+        uint64 dstChainId,
+        address receiver
+    ) internal {
+        IMessageBus bus = IMessageBus(L1_CelerMessageBus);
+        bus.sendMessage{value: 2 ether}(
+            receiver,
+            dstChainId,
+            abi.encode(uint256(12), msg.sender, keccak256("bob"))
         );
     }
 }

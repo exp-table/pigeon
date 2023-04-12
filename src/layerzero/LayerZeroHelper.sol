@@ -100,7 +100,7 @@ contract LayerZeroHelper is Test {
         uint256[] memory forkId,
         Vm.Log[] calldata logs
     ) external {
-        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        bool enableEstimates = vm.envOr("ENABLE_LZ_ESTIMATES", false);
         for (uint256 i = 0; i < expChainIds.length; i++) {
             _help(
                 endpoints[i],
@@ -122,7 +122,7 @@ contract LayerZeroHelper is Test {
         uint256 forkId,
         Vm.Log[] calldata logs
     ) external {
-        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        bool enableEstimates = vm.envOr("ENABLE_LZ_ESTIMATES", false);
         _help(
             endpoint,
             0,
@@ -143,7 +143,7 @@ contract LayerZeroHelper is Test {
         uint256 forkId,
         Vm.Log[] calldata logs
     ) external {
-        bool enableEstimates = vm.envOr("ENABLE_ESTIMATES", false);
+        bool enableEstimates = vm.envOr("ENABLE_LZ_ESTIMATES", false);
         _help(
             endpoint,
             0,

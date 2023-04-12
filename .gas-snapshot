@@ -1,3 +1,4 @@
+CelerHelperTest:testSimpleCeler() (gas: 69430)
 HyperlaneHelperTest:testCustomOrderingHL() (gas: 144528)
 HyperlaneHelperTest:testFancyHL() (gas: 145807)
 HyperlaneHelperTest:testMultiDstHL() (gas: 192366)
