@@ -3,7 +3,6 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
-
 import "solady/utils/LibString.sol";
 import {TypeCasts} from "../hyperlane/lib/TypeCasts.sol";
 
@@ -51,7 +50,6 @@ interface IMessageReceiverApp {
 
 /// @title Celer IM Cross-Chain Helper
 /// @dev use the `help` and `helpWithEstimates` functions to process any message delivery
-///
 /// @notice will help developers test celer im using forked mainnets (Near mainnet execution)
 /// @notice supports only EVM chains at this moment & single transfers
 contract CelerHelper is Test {
