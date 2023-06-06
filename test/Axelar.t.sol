@@ -3,6 +3,7 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 import "src/axelar/AxelarHelper.sol";
+import "src/axelar/lib/AddressHelper.sol";
 
 interface IAxelarGateway {
     function callContract(
@@ -113,131 +114,15 @@ contract AxelarHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(
             L2_1_CHAIN_ID,
-            toString(address(target))
+            AddressHelper.toString(address(target))
         );
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        axelarHelper.help(POLYGON_GATEWAY, POLYGON_FORK_ID, logs);
+        axelarHelper.help(L1_CHAIN_ID, POLYGON_GATEWAY, POLYGON_FORK_ID, logs);
 
         vm.selectFork(POLYGON_FORK_ID);
-        console.log(target.value());
         assertEq(target.value(), CROSS_CHAIN_MESSAGE);
     }
-
-    // function testSimpleCelerWithEstimates() external {
-    //     vm.selectFork(L1_FORK_ID);
-
-    //     vm.recordLogs();
-    //     _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(target));
-
-    //     Vm.Log[] memory logs = vm.getRecordedLogs();
-    //     celerHelper.helpWithEstimates(
-    //         L1_CHAIN_ID,
-    //         L1_CelerMessageBus,
-    //         POLYGON_CelerMessageBus,
-    //         L2_1_CHAIN_ID,
-    //         POLYGON_FORK_ID,
-    //         logs
-    //     );
-
-    //     vm.selectFork(POLYGON_FORK_ID);
-    //     assertEq(target.value(), CROSS_CHAIN_MESSAGE);
-    // }
-
-    // function testFancyCeler() external {
-    //     vm.selectFork(L1_FORK_ID);
-
-    //     vm.recordLogs();
-    //     _aMoreFancyCrossChainFunctionInYourContract(
-    //         L2_1_CHAIN_ID,
-    //         address(anotherTarget)
-    //     );
-
-    //     Vm.Log[] memory logs = vm.getRecordedLogs();
-    //     celerHelper.helpWithEstimates(
-    //         L1_CHAIN_ID,
-    //         L1_CelerMessageBus,
-    //         POLYGON_CelerMessageBus,
-    //         L2_1_CHAIN_ID,
-    //         POLYGON_FORK_ID,
-    //         logs
-    //     );
-
-    //     vm.selectFork(POLYGON_FORK_ID);
-    //     assertEq(anotherTarget.value(), 12);
-    //     assertEq(anotherTarget.kevin(), msg.sender);
-    //     assertEq(anotherTarget.bob(), keccak256("bob"));
-    // }
-
-    // function testCustomOrderingCeler() external {
-    //     vm.selectFork(L1_FORK_ID);
-
-    //     vm.recordLogs();
-
-    //     _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(target));
-    //     _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(target));
-
-    //     Vm.Log[] memory logs = vm.getRecordedLogs();
-    //     Vm.Log[] memory CelerLogs = celerHelper.findLogs(logs, 2);
-    //     Vm.Log[] memory reorderedLogs = new Vm.Log[](2);
-
-    //     reorderedLogs[0] = CelerLogs[1];
-    //     reorderedLogs[1] = CelerLogs[0];
-
-    //     celerHelper.help(
-    //         L1_CHAIN_ID,
-    //         L1_CelerMessageBus,
-    //         POLYGON_CelerMessageBus,
-    //         L2_1_CHAIN_ID,
-    //         POLYGON_FORK_ID,
-    //         reorderedLogs
-    //     );
-
-    //     vm.selectFork(POLYGON_FORK_ID);
-    //     assertEq(target.value(), CROSS_CHAIN_MESSAGE);
-    // }
-
-    // function testMultiDstCeler() external {
-    //     vm.selectFork(L1_FORK_ID);
-    //     vm.recordLogs();
-
-    //     _manyCrossChainFunctionInYourContract(
-    //         [L2_1_CHAIN_ID, L2_2_CHAIN_ID],
-    //         [address(target), address(altTarget)]
-    //     );
-
-    //     Vm.Log[] memory logs = vm.getRecordedLogs();
-
-    //     celerHelper.help(
-    //         L1_CHAIN_ID,
-    //         L1_CelerMessageBus,
-    //         allDstMessageBus,
-    //         allDstChainIds,
-    //         allDstForks,
-    //         logs
-    //     );
-
-    //     vm.selectFork(POLYGON_FORK_ID);
-    //     assertEq(target.value(), CROSS_CHAIN_MESSAGE);
-
-    //     vm.selectFork(ARBITRUM_FORK_ID);
-    //     assertEq(altTarget.value(), CROSS_CHAIN_MESSAGE);
-    // }
-
-    // function _manyCrossChainFunctionInYourContract(
-    //     uint64[2] memory dstChainIds,
-    //     address[2] memory receivers
-    // ) internal {
-    //     IMessageBus bus = IMessageBus(L1_CelerMessageBus);
-
-    //     for (uint256 i = 0; i < dstChainIds.length; i++) {
-    //         bus.sendMessage{value: 2 ether}(
-    //             receivers[i],
-    //             dstChainIds[i],
-    //             abi.encode(CROSS_CHAIN_MESSAGE)
-    //         );
-    //     }
-    // }
 
     function _someCrossChainFunctionInYourContract(
         string memory dstChain,
@@ -252,31 +137,15 @@ contract AxelarHelperTest is Test {
         );
     }
 
-    // function _aMoreFancyCrossChainFunctionInYourContract(
-    //     uint64 dstChainId,
-    //     address receiver
-    // ) internal {
-    //     IMessageBus bus = IMessageBus(L1_CelerMessageBus);
-    //     bus.sendMessage{value: 2 ether}(
-    //         receiver,
-    //         dstChainId,
-    //         abi.encode(uint256(12), msg.sender, keccak256("bob"))
-    //     );
-    // }
-
-    function toString(address addr) internal pure returns (string memory) {
-        bytes memory addressBytes = abi.encodePacked(addr);
-        uint256 length = addressBytes.length;
-        bytes memory characters = "0123456789abcdef";
-        bytes memory stringBytes = new bytes(2 + addressBytes.length * 2);
-
-        stringBytes[0] = "0";
-        stringBytes[1] = "x";
-
-        for (uint256 i; i < length; ++i) {
-            stringBytes[2 + i * 2] = characters[uint8(addressBytes[i] >> 4)];
-            stringBytes[3 + i * 2] = characters[uint8(addressBytes[i] & 0x0f)];
-        }
-        return string(stringBytes);
+    function _aMoreFancyCrossChainFunctionInYourContract(
+        uint64 dstChainId,
+        address receiver
+    ) internal {
+        IMessageBus bus = IMessageBus(L1_CelerMessageBus);
+        bus.sendMessage{value: 2 ether}(
+            receiver,
+            dstChainId,
+            abi.encode(uint256(12), msg.sender, keccak256("bob"))
+        );
     }
 }
