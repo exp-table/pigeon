@@ -21,16 +21,44 @@ contract AxelarHelper is Test {
 
     function help(
         string memory fromChain,
+        address[] memory toGateway,
+        string[] memory expDstChain,
+        uint256[] memory forkId,
+        Vm.Log[] calldata logs
+    ) external {}
+
+    function help(
+        string memory fromChain,
         address toGateway,
+        string memory expDstChain,
+        uint256 forkId,
+        bytes32 eventSelector,
+        Vm.Log[] calldata logs
+    ) external {
+        _help(fromChain, toGateway, expDstChain, forkId, eventSelector, logs);
+    }
+
+    function help(
+        string memory fromChain,
+        address toGateway,
+        string memory expDstChain,
         uint256 forkId,
         Vm.Log[] calldata logs
     ) external {
-        _help(fromChain, toGateway, forkId, MESSAGE_EVENT_SELECTOR, logs);
+        _help(
+            fromChain,
+            toGateway,
+            expDstChain,
+            forkId,
+            MESSAGE_EVENT_SELECTOR,
+            logs
+        );
     }
 
     function _help(
         string memory fromChain,
         address toGateway,
+        string memory expDstChain,
         uint256 forkId,
         bytes32 eventSelector,
         Vm.Log[] calldata logs
@@ -44,8 +72,6 @@ contract AxelarHelper is Test {
             Vm.Log memory log = logs[i];
 
             if (log.topics[0] == eventSelector) {
-                address sender = address(uint160(uint256(log.topics[1])));
-
                 string memory destinationChain;
                 string memory destinationContract;
 
@@ -56,17 +82,31 @@ contract AxelarHelper is Test {
                     (string, string, bytes)
                 );
 
-                IAxelarExecutable(AddressHelper.fromString(destinationContract))
-                    .execute(
-                        log.topics[2], /// payloadHash
-                        fromChain,
-                        AddressHelper.toString(sender),
-                        payload
-                    );
+                /// FIXME: length based checks aren't sufficient
+                if (isStringsEqual(expDstChain, destinationChain)) {
+                    IAxelarExecutable(
+                        AddressHelper.fromString(destinationContract)
+                    ).execute(
+                            log.topics[2], /// payloadHash
+                            fromChain,
+                            AddressHelper.toString(
+                                address(uint160(uint256(log.topics[1])))
+                            ),
+                            payload
+                        );
+                }
             }
         }
 
         vm.stopBroadcast();
         vm.selectFork(prevForkId);
+    }
+
+    function isStringsEqual(
+        string memory a,
+        string memory b
+    ) public view returns (bool) {
+        return (keccak256(abi.encodePacked((a))) ==
+            keccak256(abi.encodePacked((b))));
     }
 }

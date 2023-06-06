@@ -118,7 +118,13 @@ contract AxelarHelperTest is Test {
         );
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        axelarHelper.help(L1_CHAIN_ID, POLYGON_GATEWAY, POLYGON_FORK_ID, logs);
+        axelarHelper.help(
+            L1_CHAIN_ID,
+            POLYGON_GATEWAY,
+            L2_1_CHAIN_ID,
+            POLYGON_FORK_ID,
+            logs
+        );
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.value(), CROSS_CHAIN_MESSAGE);
@@ -134,18 +140,6 @@ contract AxelarHelperTest is Test {
             dstChain,
             receiver,
             abi.encode(CROSS_CHAIN_MESSAGE)
-        );
-    }
-
-    function _aMoreFancyCrossChainFunctionInYourContract(
-        uint64 dstChainId,
-        address receiver
-    ) internal {
-        IMessageBus bus = IMessageBus(L1_CelerMessageBus);
-        bus.sendMessage{value: 2 ether}(
-            receiver,
-            dstChainId,
-            abi.encode(uint256(12), msg.sender, keccak256("bob"))
         );
     }
 }
