@@ -25,7 +25,18 @@ contract AxelarHelper is Test {
         string[] memory expDstChain,
         uint256[] memory forkId,
         Vm.Log[] calldata logs
-    ) external {}
+    ) external {
+        for (uint256 i; i < toGateway.length; i++) {
+            _help(
+                fromChain,
+                toGateway[i],
+                expDstChain[i],
+                forkId[i],
+                MESSAGE_EVENT_SELECTOR,
+                logs
+            );
+        }
+    }
 
     function help(
         string memory fromChain,
