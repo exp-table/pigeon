@@ -66,6 +66,8 @@ To display estimations, be sure to run the `npm install` and `npm run compile` c
 | --------- | :----------: |
 | Hyperlane |      ✅      |
 | LayerZero |      ✅      |
+| Celer     |      ✅      |
+| Axelar    |      ✅      |
 | Stargate  |      ✅      |
 
 **Warning**

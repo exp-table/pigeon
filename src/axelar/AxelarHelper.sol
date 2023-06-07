@@ -66,6 +66,13 @@ contract AxelarHelper is Test {
         );
     }
 
+    function findLogs(
+        Vm.Log[] calldata logs,
+        uint256 length
+    ) external pure returns (Vm.Log[] memory HLLogs) {
+        return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
+    }
+
     function _help(
         string memory fromChain,
         address toGateway,
@@ -119,5 +126,26 @@ contract AxelarHelper is Test {
     ) public view returns (bool) {
         return (keccak256(abi.encodePacked((a))) ==
             keccak256(abi.encodePacked((b))));
+    }
+
+    function _findLogs(
+        Vm.Log[] memory logs,
+        bytes32 dispatchSelector,
+        uint256 length
+    ) internal pure returns (Vm.Log[] memory AxelarLogs) {
+        AxelarLogs = new Vm.Log[](length);
+
+        uint256 currentIndex = 0;
+
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == dispatchSelector) {
+                AxelarLogs[currentIndex] = logs[i];
+                currentIndex++;
+
+                if (currentIndex == length) {
+                    break;
+                }
+            }
+        }
     }
 }
