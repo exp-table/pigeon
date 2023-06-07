@@ -1,3 +1,7 @@
+AxelarHelperTest:testCustomOrderingAxelar() (gas: 261285)
+AxelarHelperTest:testFancyAxelar() (gas: 191261)
+AxelarHelperTest:testMultiDstAxelar() (gas: 302949)
+AxelarHelperTest:testSimpleAxelar() (gas: 145962)
 CelerHelperTest:testCustomOrderingCeler() (gas: 107174)
 CelerHelperTest:testFancyCeler() (gas: 117186)
 CelerHelperTest:testMultiDstCeler() (gas: 150072)
