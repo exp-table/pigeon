@@ -38,26 +38,34 @@ Add `pigeon/=lib/pigeon/` to `remappings.txt`
 
 ### Usage
 
-Once installed, you can use the helper contracts of pigeon by importing them in your test files. A detailed documentation on all different helper function for multiple AMBs is under progress.
+Once installed, you can use the helper contracts of Pigeon by importing them into your test files. Detailed documentation on all different helper functions for multiple AMBs is in progress.
 
+It is made to be as simple as instantiating the helper in your test file and simply calling `help` with the appropriate parameters.
+We have provided examples in the test files.
+
+Without gas estimation (Hyperlane):
 
 ```solidity
-/// @dev starts recording of logs
 vm.recordLogs();
-
-/// @dev can do some cross-chain messaging here
 _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
-
-/// @dev gets the recorded logs
-m.Log[] memory logs = vm.getRecordedLogs();
-
-/// @dev calls the helpers of pigeon
+Vm.Log[] memory logs = vm.getRecordedLogs();
 hyperlaneHelper.help(L1_HLMailbox, L2_HLMailbox, L2_FORK_ID, logs);
 ```
 
-**Gas estimation** is the gas costs required in native tokens to pay for the message delivery, which is not properly integrated in the repository for all Arbitrary Message Bridges at this point.
+With gas estimation (Hyperlane):
 
-**Warning** As of now, it only supports the message execution and is not sensible to gas limits (which is a function of the fee you pay to the protocols usually).
+```solidity
+vm.recordLogs();
+_someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(address(target)));
+Vm.Log[] memory logs = vm.getRecordedLogs();
+hyperlaneHelper.helpWithEstimates(L1_Mailbox, L2_HLMailbox, L2_FORK_ID, logs);
+```
+
+To display estimations, run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to `true.`
+
+**Gas estimation** is the gas costs required in native tokens to pay for the message delivery.
+
+**Warning** As of now, it only supports the message execution and is not sensible to gas limits (a function of the fee you usually pay to the protocols).
 
 ## Local Development
 Welcoming all open-source contributors to maintain & continue integrating more cross-chain messaging bridges to Pigeon. To do so,
