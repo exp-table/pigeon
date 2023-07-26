@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// library imports
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
 
+/// bridge specific imports
 import "./lib/PayloadDecoder.sol";
 import "./lib/InternalStructs.sol";
 
+import {TypeCasts} from "../hyperlane/lib/TypeCasts.sol";
+
+/// @dev interface that every wormhole receiver should implement
+/// @notice the helper will try to deliver the message to this interface
 interface IWormholeReceiver {
     function receiveWormholeMessages(
         bytes memory payload,
@@ -17,28 +22,135 @@ interface IWormholeReceiver {
     ) external payable;
 }
 
+/// @title WormholeHelper
+/// @author Sujith Somraaj
+/// @dev wormhole bridge helper
+/// @notice supports only automatic relayer (not specialized relayers)
+/// MORE INFO: https://docs.wormhole.com/wormhole/quick-start/cross-chain-dev/automatic-relayer
 contract WormholeHelper is Test {
+    /*///////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
     /// @dev LogMessagePublished (index_topic_1 address sender, uint64 sequence, uint32 nonce, bytes payload, uint8 consistencyLevel)
     bytes32 constant MESSAGE_EVENT_SELECTOR =
         0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2;
 
-    /// @dev to process cross-chain message delivery
+    /*///////////////////////////////////////////////////////////////
+                             EXTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev single dst x default event selector
+    /// @param srcChainId is the wormhole identifier of the source chain
+    /// @param dstForkId is the dst fork id to deliver the message
+    /// @param dstRelayer is wormhole's dst chain relayer
+    /// @param logs is the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
-        uint256 forkId,
-        address dstAddress,
+        uint256 dstForkId,
         address dstRelayer,
         Vm.Log[] calldata logs
     ) external {
         _help(
             srcChainId,
-            forkId,
-            dstAddress,
+            dstForkId,
+            address(0),
             dstRelayer,
             MESSAGE_EVENT_SELECTOR,
             logs
         );
     }
+
+    /// @dev single dst x user-specific event selector
+    /// @param srcChainId is the wormhole identifier of the source chain
+    /// @param dstForkId is the dst fork id to deliver the message
+    /// @param dstRelayer is wormhole's dst chain relayer
+    /// @param logs is the logs after message dispatch on src chain
+    function help(
+        uint16 srcChainId,
+        uint256 dstForkId,
+        address dstRelayer,
+        bytes32 msgEventSelector,
+        Vm.Log[] calldata logs
+    ) external {
+        _help(
+            srcChainId,
+            dstForkId,
+            address(0),
+            dstRelayer,
+            msgEventSelector,
+            logs
+        );
+    }
+
+    /// @dev multi dst x default event selector
+    /// @param srcChainId is the wormhole identifier of the source chain
+    /// @param dstForkId is the dst fork id to deliver the message
+    /// @param dstRelayer is wormhole's dst chain relayer
+    /// @param logs is the logs after message dispatch on src chain
+    function help(
+        uint16 srcChainId,
+        uint256[] calldata dstForkId,
+        address[] calldata expDstAddress,
+        address[] calldata dstRelayer,
+        Vm.Log[] calldata logs
+    ) external {
+        for (uint256 i; i < dstForkId.length; ) {
+            _help(
+                srcChainId,
+                dstForkId[i],
+                expDstAddress[i],
+                dstRelayer[i],
+                MESSAGE_EVENT_SELECTOR,
+                logs
+            );
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /// @dev multi dst x user-specific event selector
+    /// @param srcChainId is the wormhole identifier of the source chain
+    /// @param dstForkId is the dst fork id to deliver the message
+    /// @param dstRelayer is wormhole's dst chain relayer
+    /// @param logs is the logs after message dispatch on src chain
+    function help(
+        uint16 srcChainId,
+        uint256[] calldata dstForkId,
+        address[] calldata expDstAddress,
+        address[] calldata dstRelayer,
+        bytes32 msgEventSelector,
+        Vm.Log[] calldata logs
+    ) external {
+        for (uint256 i; i < dstForkId.length; ) {
+            _help(
+                srcChainId,
+                dstForkId[i],
+                expDstAddress[i],
+                dstRelayer[i],
+                msgEventSelector,
+                logs
+            );
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /// @dev helps find logs of `length` for default event selector
+    function findLogs(
+        Vm.Log[] calldata logs,
+        uint256 length
+    ) external pure returns (Vm.Log[] memory HLLogs) {
+        return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
+    }
+
+    /*///////////////////////////////////////////////////////////////
+                        INTERNAL/HELPER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     struct LocalVars {
         uint64 sequence;
@@ -49,14 +161,14 @@ contract WormholeHelper is Test {
     /// @dev helper to process cross-chain messages
     function _help(
         uint16 srcChainId,
-        uint256 forkId,
-        address dstAddress,
+        uint256 dstForkId,
+        address expDstAddress,
         address dstRelayer,
         bytes32 eventSelector,
         Vm.Log[] calldata logs
     ) internal {
         uint256 prevForkId = vm.activeFork();
-        vm.selectFork(forkId);
+        vm.selectFork(dstForkId);
         vm.startBroadcast(dstRelayer);
 
         for (uint256 i; i < logs.length; i++) {
@@ -70,22 +182,51 @@ contract WormholeHelper is Test {
                     (uint64, uint32, bytes, uint8)
                 );
 
-                console.logBytes(vars.payload);
-
                 DeliveryInstruction memory instruction = PayloadDecoder
                     .decodeDeliveryInstruction(vars.payload);
 
-                IWormholeReceiver(dstAddress).receiveWormholeMessages(
-                    instruction.payload,
-                    new bytes[](0),
-                    log.topics[1],
-                    srcChainId,
-                    keccak256(abi.encodePacked(vars.sequence, vars.nonce)) /// @dev generating some random hash
+                address dstAddress = TypeCasts.bytes32ToAddress(
+                    instruction.targetAddress
                 );
+
+                console.log("entered");
+                console.log(expDstAddress);
+                console.log(dstAddress);
+
+                if (expDstAddress == address(0) || expDstAddress == dstAddress)
+                    IWormholeReceiver(dstAddress).receiveWormholeMessages(
+                        instruction.payload,
+                        new bytes[](0),
+                        log.topics[1],
+                        srcChainId,
+                        keccak256(abi.encodePacked(vars.sequence, vars.nonce)) /// @dev generating some random hash
+                    );
             }
         }
 
         vm.stopBroadcast();
         vm.selectFork(prevForkId);
+    }
+
+    /// @dev helper to get logs
+    function _findLogs(
+        Vm.Log[] memory logs,
+        bytes32 dispatchSelector,
+        uint256 length
+    ) internal pure returns (Vm.Log[] memory WormholeLogs) {
+        WormholeLogs = new Vm.Log[](length);
+
+        uint256 currentIndex = 0;
+
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == dispatchSelector) {
+                WormholeLogs[currentIndex] = logs[i];
+                currentIndex++;
+
+                if (currentIndex == length) {
+                    break;
+                }
+            }
+        }
     }
 }

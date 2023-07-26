@@ -1,6 +1,5 @@
-// SPDX-License-Identifier: Apache 2
-
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0;
 
 import {DeliveryOverride, DeliveryInstruction, RedeliveryInstruction, VaaKey} from "./InternalStructs.sol";
 import "./BytesParsing.sol";

@@ -1,4 +1,5 @@
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0;
 
 library BytesParsing {
     uint256 private constant freeMemoryPtr = 0x40;
