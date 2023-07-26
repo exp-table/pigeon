@@ -23,6 +23,7 @@ By doing near mainnet testing, developers can quickly check sender authenticatio
 | LayerZero |      ✅      | ✅  |
 | Celer     |      ✅      |   |
 | Axelar    |      ✅      |   |
+| Wormhole    |      ✅      |   |
 | Stargate  |      ✅      |   |
 
 ## Getting Started
