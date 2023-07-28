@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import "forge-std/Test.sol";
 import "solady/utils/LibString.sol";
 
-import {TypeCasts} from "./lib/TypeCasts.sol";
+import {TypeCasts} from "../libraries/TypeCasts.sol";
 
 interface IMessageRecipient {
     function handle(

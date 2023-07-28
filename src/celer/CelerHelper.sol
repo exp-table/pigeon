@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 import "solady/utils/LibString.sol";
-import {TypeCasts} from "../hyperlane/lib/TypeCasts.sol";
+import {TypeCasts} from "../libraries/TypeCasts.sol";
 
 interface IMessageBus {
     /**
