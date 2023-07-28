@@ -8,7 +8,7 @@ import "forge-std/Test.sol";
 import "./lib/PayloadDecoder.sol";
 import "./lib/InternalStructs.sol";
 
-import {TypeCasts} from "../hyperlane/lib/TypeCasts.sol";
+import {TypeCasts} from "../libraries/TypeCasts.sol";
 
 /// @dev interface that every wormhole receiver should implement
 /// @notice the helper will try to deliver the message to this interface
