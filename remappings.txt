@@ -1,6 +1,5 @@
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
-solady/=lib/solady/src/
 solmate/=lib/solmate/src/
 lib/forge-std:ds-test/=lib/forge-std/lib/ds-test/src/
 lib/solady:ds-test/=lib/solady/lib/forge-std/lib/ds-test/src/

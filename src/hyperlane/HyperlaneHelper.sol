@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import "solady/utils/LibString.sol";
+import "solady/src/utils/LibString.sol";
 
 import {TypeCasts} from "../libraries/TypeCasts.sol";
 
