@@ -13,6 +13,19 @@ interface IAxelarExecutable {
     ) external;
 }
 
+interface IAxelarGateway {
+    function approveContractCall(
+        bytes calldata params,
+        bytes32 commandId
+    ) external;
+
+    function callContract(
+        string calldata destinationChain,
+        string calldata contractAddress,
+        bytes calldata payload
+    ) external;
+}
+
 /// @title Axelar Helper
 /// @notice helps mock the message transfer using axelar bridge
 contract AxelarHelper is Test {
@@ -73,6 +86,14 @@ contract AxelarHelper is Test {
         return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
     }
 
+    struct LocalVars {
+        uint256 prevForkId;
+        Vm.Log log;
+        string destinationChain;
+        string destinationContract;
+        bytes payload;
+    }
+
     function _help(
         string memory fromChain,
         address toGateway,
@@ -81,49 +102,58 @@ contract AxelarHelper is Test {
         bytes32 eventSelector,
         Vm.Log[] calldata logs
     ) internal {
-        uint256 prevForkId = vm.activeFork();
-        vm.selectFork(forkId);
+        LocalVars memory v;
+        v.prevForkId = vm.activeFork();
 
+        vm.selectFork(forkId);
         vm.startBroadcast(toGateway);
 
         for (uint256 i; i < logs.length; i++) {
-            Vm.Log memory log = logs[i];
+            v.log = logs[i];
 
-            if (log.topics[0] == eventSelector) {
-                string memory destinationChain;
-                string memory destinationContract;
-
-                bytes memory payload;
-
-                (destinationChain, destinationContract, payload) = abi.decode(
-                    log.data,
-                    (string, string, bytes)
-                );
+            if (v.log.topics[0] == eventSelector) {
+                (v.destinationChain, v.destinationContract, v.payload) = abi
+                    .decode(v.log.data, (string, string, bytes));
 
                 /// FIXME: length based checks aren't sufficient
-                if (isStringsEqual(expDstChain, destinationChain)) {
-                    IAxelarExecutable(
-                        AddressHelper.fromString(destinationContract)
-                    ).execute(
-                            log.topics[2], /// payloadHash
+                if (isStringsEqual(expDstChain, v.destinationChain)) {
+                    string memory srcAddress = AddressHelper.toString(
+                        address(uint160(uint256(v.log.topics[1])))
+                    );
+                    address dstContract = AddressHelper.fromString(
+                        v.destinationContract
+                    );
+
+                    IAxelarGateway(toGateway).approveContractCall(
+                        abi.encode(
                             fromChain,
-                            AddressHelper.toString(
-                                address(uint160(uint256(log.topics[1])))
-                            ),
-                            payload
-                        );
+                            srcAddress,
+                            dstContract,
+                            keccak256(v.payload),
+                            bytes32(0),
+                            i
+                        ),
+                        v.log.topics[2]
+                    );
+
+                    IAxelarExecutable(dstContract).execute(
+                        v.log.topics[2], /// payloadHash
+                        fromChain,
+                        srcAddress,
+                        v.payload
+                    );
                 }
             }
         }
 
         vm.stopBroadcast();
-        vm.selectFork(prevForkId);
+        vm.selectFork(v.prevForkId);
     }
 
     function isStringsEqual(
         string memory a,
         string memory b
-    ) public view returns (bool) {
+    ) public pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) ==
             keccak256(abi.encodePacked((b))));
     }

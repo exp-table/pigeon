@@ -153,9 +153,11 @@ contract WormholeHelper is Test {
     //////////////////////////////////////////////////////////////*/
 
     struct LocalVars {
+        uint256 prevForkId;
         uint64 sequence;
         uint32 nonce;
         bytes payload;
+        address dstAddress;
     }
 
     /// @dev helper to process cross-chain messages
@@ -167,7 +169,9 @@ contract WormholeHelper is Test {
         bytes32 eventSelector,
         Vm.Log[] calldata logs
     ) internal {
-        uint256 prevForkId = vm.activeFork();
+        LocalVars memory v;
+        v.prevForkId = vm.activeFork();
+
         vm.selectFork(dstForkId);
         vm.startBroadcast(dstRelayer);
 
@@ -175,37 +179,33 @@ contract WormholeHelper is Test {
             Vm.Log memory log = logs[i];
 
             if (log.topics[0] == eventSelector) {
-                LocalVars memory vars;
-
-                (vars.sequence, vars.nonce, vars.payload, ) = abi.decode(
+                (v.sequence, v.nonce, v.payload, ) = abi.decode(
                     log.data,
                     (uint64, uint32, bytes, uint8)
                 );
 
                 DeliveryInstruction memory instruction = PayloadDecoder
-                    .decodeDeliveryInstruction(vars.payload);
+                    .decodeDeliveryInstruction(v.payload);
 
-                address dstAddress = TypeCasts.bytes32ToAddress(
+                v.dstAddress = TypeCasts.bytes32ToAddress(
                     instruction.targetAddress
                 );
 
-                console.log("entered");
-                console.log(expDstAddress);
-                console.log(dstAddress);
-
-                if (expDstAddress == address(0) || expDstAddress == dstAddress)
-                    IWormholeReceiver(dstAddress).receiveWormholeMessages(
+                if (
+                    expDstAddress == address(0) || expDstAddress == v.dstAddress
+                )
+                    IWormholeReceiver(v.dstAddress).receiveWormholeMessages(
                         instruction.payload,
                         new bytes[](0),
-                        log.topics[1],
+                        instruction.senderAddress,
                         srcChainId,
-                        keccak256(abi.encodePacked(vars.sequence, vars.nonce)) /// @dev generating some random hash
+                        keccak256(abi.encodePacked(v.sequence, v.nonce)) /// @dev generating some random hash
                     );
             }
         }
 
         vm.stopBroadcast();
-        vm.selectFork(prevForkId);
+        vm.selectFork(v.prevForkId);
     }
 
     /// @dev helper to get logs
