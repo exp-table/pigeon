@@ -37,11 +37,11 @@ contract Target {
     uint256 public value;
 
     function sgReceive(
-        uint16 _srcChainId,
-        bytes memory _srcAddress,
-        uint256 _nonce,
-        address _token,
-        uint256 amountLD,
+        uint16, /// _srcChainId
+        bytes memory, /// _srcAddress
+        uint256, /// _nonce
+        address, /// _token
+        uint256, /// amountLD
         bytes memory payload
     ) external {
         value = abi.decode(payload, (uint256));
@@ -61,10 +61,10 @@ contract AnotherTarget {
 
     function sgReceive(
         uint16 _srcChainId,
-        bytes memory _srcAddress,
-        uint256 _nonce,
-        address _token,
-        uint256 amountLD,
+        bytes memory, /// _srcAddress
+        uint256, /// _nonce
+        address, /// _token
+        uint256, /// _amount
         bytes memory payload
     ) external {
         require(_srcChainId == expectedId, "Unexpected id");

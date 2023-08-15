@@ -156,9 +156,7 @@ contract HyperlaneHelper is Test {
             if (
                 log.emitter == fromMailbox && log.topics[0] == dispatchSelector
             ) {
-                bytes32 sender = log.topics[1];
                 uint32 destinationDomain = uint32(uint256(log.topics[2]));
-                bytes32 recipient = log.topics[3];
                 bytes memory message = abi.decode(log.data, (bytes));
 
                 if (expDstDomain == destinationDomain || expDstDomain == 0) {

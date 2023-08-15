@@ -97,8 +97,6 @@ library LayerZeroPacket {
         srcAddressBuffer.init(sizeOfSrcAddress);
         srcAddressBuffer.writeRawBytes(0, data, 106, sizeOfSrcAddress);
 
-        uint256 nonPayloadSize = sizeOfSrcAddress + 32; // 2 + 2 + 8 + 20, 32 + 20 = 52 if sizeOfSrcAddress == 20
-        uint256 payloadSize = realSize - nonPayloadSize;
         Buffer.buffer memory payloadBuffer;
         // payloadBuffer.init(payloadSize);
         // payloadBuffer.writeRawBytes(0, data, nonPayloadSize + 96, payloadSize);

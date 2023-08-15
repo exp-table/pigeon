@@ -9,9 +9,9 @@ contract Target {
     uint256 public value;
 
     function execute(
-        bytes32 commandId,
-        string calldata sourceChain,
-        string calldata sourceAddress,
+        bytes32, /// commandId
+        string calldata, /// sourceChain
+        string calldata, /// sourceAddress
         bytes calldata payload
     ) external {
         value = abi.decode(payload, (uint256));
