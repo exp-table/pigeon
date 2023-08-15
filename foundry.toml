@@ -4,6 +4,6 @@
 
 [profile.default]
 solc_version = '0.8.19'
-auto_detect_solc = false
-optimizer_runs = 1_000
+optimizer_runs = 100
+optimizer = true
 viaIR = true
