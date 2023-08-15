@@ -5,14 +5,6 @@ import "forge-std/Test.sol";
 import "src/axelar/AxelarHelper.sol";
 import "src/axelar/lib/AddressHelper.sol";
 
-interface IAxelarGateway {
-    function callContract(
-        string calldata destinationChain,
-        string calldata contractAddress,
-        bytes calldata payload
-    ) external;
-}
-
 contract Target {
     uint256 public value;
 
@@ -86,14 +78,14 @@ contract AxelarHelperTest is Test {
     string RPC_ARBITRUM_MAINNET = vm.envString("ARBITRUM_MAINNET_RPC_URL");
 
     function setUp() external {
-        L1_FORK_ID = vm.createSelectFork(RPC_ETH_MAINNET, 16400467);
+        L1_FORK_ID = vm.createSelectFork(RPC_ETH_MAINNET);
         axelarHelper = new AxelarHelper();
 
-        POLYGON_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET, 38063686);
+        POLYGON_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET);
         target = new Target();
         anotherTarget = new AnotherTarget(L1_CHAIN_ID);
 
-        ARBITRUM_FORK_ID = vm.createSelectFork(RPC_ARBITRUM_MAINNET, 38063686);
+        ARBITRUM_FORK_ID = vm.createSelectFork(RPC_ARBITRUM_MAINNET);
         altTarget = new Target();
 
         allDstTargets.push(address(target));

@@ -13,6 +13,19 @@ interface IAxelarExecutable {
     ) external;
 }
 
+interface IAxelarGateway {
+    function approveContractCall(
+        bytes calldata params,
+        bytes32 commandId
+    ) external;
+
+    function callContract(
+        string calldata destinationChain,
+        string calldata contractAddress,
+        bytes calldata payload
+    ) external;
+}
+
 /// @title Axelar Helper
 /// @notice helps mock the message transfer using axelar bridge
 contract AxelarHelper is Test {
@@ -82,8 +95,8 @@ contract AxelarHelper is Test {
         Vm.Log[] calldata logs
     ) internal {
         uint256 prevForkId = vm.activeFork();
-        vm.selectFork(forkId);
 
+        vm.selectFork(forkId);
         vm.startBroadcast(toGateway);
 
         for (uint256 i; i < logs.length; i++) {
@@ -102,16 +115,31 @@ contract AxelarHelper is Test {
 
                 /// FIXME: length based checks aren't sufficient
                 if (isStringsEqual(expDstChain, destinationChain)) {
-                    IAxelarExecutable(
-                        AddressHelper.fromString(destinationContract)
-                    ).execute(
-                            log.topics[2], /// payloadHash
+                    string memory srcAddress = AddressHelper.toString(
+                        address(uint160(uint256(log.topics[1])))
+                    );
+                    address dstContract = AddressHelper.fromString(
+                        destinationContract
+                    );
+
+                    IAxelarGateway(toGateway).approveContractCall(
+                        abi.encode(
                             fromChain,
-                            AddressHelper.toString(
-                                address(uint160(uint256(log.topics[1])))
-                            ),
-                            payload
-                        );
+                            srcAddress,
+                            dstContract,
+                            keccak256(payload),
+                            bytes32(0),
+                            i
+                        ),
+                        log.topics[2]
+                    );
+
+                    IAxelarExecutable(dstContract).execute(
+                        log.topics[2], /// payloadHash
+                        fromChain,
+                        srcAddress,
+                        payload
+                    );
                 }
             }
         }

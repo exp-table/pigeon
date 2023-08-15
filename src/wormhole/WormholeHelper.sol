@@ -189,15 +189,11 @@ contract WormholeHelper is Test {
                     instruction.targetAddress
                 );
 
-                console.log("entered");
-                console.log(expDstAddress);
-                console.log(dstAddress);
-
                 if (expDstAddress == address(0) || expDstAddress == dstAddress)
                     IWormholeReceiver(dstAddress).receiveWormholeMessages(
                         instruction.payload,
                         new bytes[](0),
-                        log.topics[1],
+                        instruction.senderAddress,
                         srcChainId,
                         keccak256(abi.encodePacked(vars.sequence, vars.nonce)) /// @dev generating some random hash
                     );
