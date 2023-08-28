@@ -9,9 +9,12 @@ contract Target {
     uint256 public value;
 
     function execute(
-        bytes32, /// commandId
-        string calldata, /// sourceChain
-        string calldata, /// sourceAddress
+        bytes32,
+        /// commandId
+        string calldata,
+        /// sourceChain
+        string calldata,
+        /// sourceAddress
         bytes calldata payload
     ) external {
         value = abi.decode(payload, (uint256));
@@ -36,9 +39,7 @@ contract AnotherTarget {
         bytes calldata payload
     ) external {
         require(
-            keccak256(abi.encodePacked(sourceChain)) ==
-                keccak256(abi.encodePacked(expectedChain)),
-            "Unexpected origin"
+            keccak256(abi.encodePacked(sourceChain)) == keccak256(abi.encodePacked(expectedChain)), "Unexpected origin"
         );
         (value, kevin, bob) = abi.decode(payload, (uint256, address, bytes32));
     }
@@ -63,10 +64,8 @@ contract AxelarHelperTest is Test {
     string constant L2_2_CHAIN_ID = "arbitrum";
 
     address constant L1_GATEWAY = 0x4F4495243837681061C4743b74B3eEdf548D56A5;
-    address constant POLYGON_GATEWAY =
-        0x6f015F16De9fC8791b234eF68D486d2bF203FBA8;
-    address constant ARBITRUM_GATEWAY =
-        0xe432150cce91c13a887f7D836923d5597adD8E31;
+    address constant POLYGON_GATEWAY = 0x6f015F16De9fC8791b234eF68D486d2bF203FBA8;
+    address constant ARBITRUM_GATEWAY = 0xe432150cce91c13a887f7D836923d5597adD8E31;
 
     address[] public allDstTargets;
     address[] public allDstGateways;
@@ -105,19 +104,10 @@ contract AxelarHelperTest is Test {
         vm.selectFork(L1_FORK_ID);
 
         vm.recordLogs();
-        _someCrossChainFunctionInYourContract(
-            L2_1_CHAIN_ID,
-            AddressHelper.toString(address(target))
-        );
+        _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, AddressHelper.toString(address(target)));
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        axelarHelper.help(
-            L1_CHAIN_ID,
-            POLYGON_GATEWAY,
-            L2_1_CHAIN_ID,
-            POLYGON_FORK_ID,
-            logs
-        );
+        axelarHelper.help(L1_CHAIN_ID, POLYGON_GATEWAY, L2_1_CHAIN_ID, POLYGON_FORK_ID, logs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.value(), CROSS_CHAIN_MESSAGE);
@@ -127,19 +117,10 @@ contract AxelarHelperTest is Test {
         vm.selectFork(L1_FORK_ID);
 
         vm.recordLogs();
-        _aMoreFancyCrossChainFunctionInYourContract(
-            L2_1_CHAIN_ID,
-            AddressHelper.toString(address(anotherTarget))
-        );
+        _aMoreFancyCrossChainFunctionInYourContract(L2_1_CHAIN_ID, AddressHelper.toString(address(anotherTarget)));
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        axelarHelper.help(
-            L1_CHAIN_ID,
-            POLYGON_GATEWAY,
-            L2_1_CHAIN_ID,
-            POLYGON_FORK_ID,
-            logs
-        );
+        axelarHelper.help(L1_CHAIN_ID, POLYGON_GATEWAY, L2_1_CHAIN_ID, POLYGON_FORK_ID, logs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(anotherTarget.value(), 12);
@@ -151,14 +132,8 @@ contract AxelarHelperTest is Test {
         vm.selectFork(L1_FORK_ID);
         vm.recordLogs();
 
-        _someSecondCrossChainFunctionInYourContract(
-            L2_1_CHAIN_ID,
-            AddressHelper.toString(address(target))
-        );
-        _someCrossChainFunctionInYourContract(
-            L2_1_CHAIN_ID,
-            AddressHelper.toString(address(target))
-        );
+        _someSecondCrossChainFunctionInYourContract(L2_1_CHAIN_ID, AddressHelper.toString(address(target)));
+        _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, AddressHelper.toString(address(target)));
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         Vm.Log[] memory AxelarLogs = axelarHelper.findLogs(logs, 2);
@@ -167,13 +142,7 @@ contract AxelarHelperTest is Test {
         reorderedLogs[0] = AxelarLogs[1];
         reorderedLogs[1] = AxelarLogs[0];
 
-        axelarHelper.help(
-            L1_CHAIN_ID,
-            POLYGON_GATEWAY,
-            L2_1_CHAIN_ID,
-            POLYGON_FORK_ID,
-            reorderedLogs
-        );
+        axelarHelper.help(L1_CHAIN_ID, POLYGON_GATEWAY, L2_1_CHAIN_ID, POLYGON_FORK_ID, reorderedLogs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.value(), SECOND_CROSS_CHAIN_MESSAGE);
@@ -185,21 +154,12 @@ contract AxelarHelperTest is Test {
 
         _manyCrossChainFunctionInYourContract(
             [L2_1_CHAIN_ID, L2_2_CHAIN_ID],
-            [
-                AddressHelper.toString(address(target)),
-                AddressHelper.toString(address(altTarget))
-            ]
+            [AddressHelper.toString(address(target)), AddressHelper.toString(address(altTarget))]
         );
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
 
-        axelarHelper.help(
-            L1_CHAIN_ID,
-            allDstGateways,
-            allDstChainIds,
-            allDstForks,
-            logs
-        );
+        axelarHelper.help(L1_CHAIN_ID, allDstGateways, allDstChainIds, allDstForks, logs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.value(), CROSS_CHAIN_MESSAGE);
@@ -208,57 +168,29 @@ contract AxelarHelperTest is Test {
         assertEq(altTarget.value(), CROSS_CHAIN_MESSAGE);
     }
 
-    function _manyCrossChainFunctionInYourContract(
-        string[2] memory dstChainIds,
-        string[2] memory receivers
-    ) internal {
+    function _manyCrossChainFunctionInYourContract(string[2] memory dstChainIds, string[2] memory receivers) internal {
         IAxelarGateway gateway = IAxelarGateway(L1_GATEWAY);
 
         for (uint256 i = 0; i < dstChainIds.length; i++) {
-            gateway.callContract(
-                dstChainIds[i],
-                receivers[i],
-                abi.encode(CROSS_CHAIN_MESSAGE)
-            );
+            gateway.callContract(dstChainIds[i], receivers[i], abi.encode(CROSS_CHAIN_MESSAGE));
         }
     }
 
-    function _someCrossChainFunctionInYourContract(
-        string memory dstChain,
-        string memory receiver
-    ) internal {
+    function _someCrossChainFunctionInYourContract(string memory dstChain, string memory receiver) internal {
         IAxelarGateway gateway = IAxelarGateway(L1_GATEWAY);
 
-        gateway.callContract(
-            dstChain,
-            receiver,
-            abi.encode(CROSS_CHAIN_MESSAGE)
-        );
+        gateway.callContract(dstChain, receiver, abi.encode(CROSS_CHAIN_MESSAGE));
     }
 
-    function _someSecondCrossChainFunctionInYourContract(
-        string memory dstChain,
-        string memory receiver
-    ) internal {
+    function _someSecondCrossChainFunctionInYourContract(string memory dstChain, string memory receiver) internal {
         IAxelarGateway gateway = IAxelarGateway(L1_GATEWAY);
 
-        gateway.callContract(
-            dstChain,
-            receiver,
-            abi.encode(SECOND_CROSS_CHAIN_MESSAGE)
-        );
+        gateway.callContract(dstChain, receiver, abi.encode(SECOND_CROSS_CHAIN_MESSAGE));
     }
 
-    function _aMoreFancyCrossChainFunctionInYourContract(
-        string memory dstChain,
-        string memory receiver
-    ) internal {
+    function _aMoreFancyCrossChainFunctionInYourContract(string memory dstChain, string memory receiver) internal {
         IAxelarGateway gateway = IAxelarGateway(L1_GATEWAY);
 
-        gateway.callContract(
-            dstChain,
-            receiver,
-            abi.encode(uint256(12), msg.sender, keccak256("bob"))
-        );
+        gateway.callContract(dstChain, receiver, abi.encode(uint256(12), msg.sender, keccak256("bob")));
     }
 }

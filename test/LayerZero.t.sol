@@ -19,12 +19,9 @@ interface ILayerZeroEndpoint {
 contract Target {
     uint256 public value;
 
-    function lzReceive(
-        uint16 _srcChainId,
-        bytes calldata _srcAddress,
-        uint64 _nonce,
-        bytes calldata _payload
-    ) external {
+    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload)
+        external
+    {
         value = abi.decode(_payload, (uint256));
     }
 }
@@ -40,12 +37,9 @@ contract AnotherTarget {
         expectedId = _expectedId;
     }
 
-    function lzReceive(
-        uint16 _srcChainId,
-        bytes calldata _srcAddress,
-        uint64 _nonce,
-        bytes calldata _payload
-    ) external {
+    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload)
+        external
+    {
         require(_srcChainId == expectedId, "Unexpected id");
         (value, kevin, bob) = abi.decode(_payload, (uint256, address, bytes32));
     }
@@ -66,10 +60,8 @@ contract LayerZeroHelperTest is Test {
     uint16 constant ARBITRUM_ID = 110;
 
     address constant L1_lzEndpoint = 0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675;
-    address constant polygonEndpoint =
-        0x3c2269811836af69497E5F486A85D7316753cf62;
-    address constant arbitrumEndpoint =
-        0x3c2269811836af69497E5F486A85D7316753cf62;
+    address constant polygonEndpoint = 0x3c2269811836af69497E5F486A85D7316753cf62;
+    address constant arbitrumEndpoint = 0x3c2269811836af69497E5F486A85D7316753cf62;
 
     address[] public allDstTargets;
     address[] public allDstEndpoints;
@@ -129,12 +121,7 @@ contract LayerZeroHelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.helpWithEstimates(
-            polygonEndpoint,
-            100000,
-            POLYGON_FORK_ID,
-            logs
-        );
+        lzHelper.helpWithEstimates(polygonEndpoint, 100000, POLYGON_FORK_ID, logs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.value(), 12);
@@ -178,13 +165,7 @@ contract LayerZeroHelperTest is Test {
         _manyCrossChainFunctionInYourContract();
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        lzHelper.help(
-            allDstEndpoints,
-            allDstChainIds,
-            100000,
-            allDstForks,
-            logs
-        );
+        lzHelper.help(allDstEndpoints, allDstChainIds, 100000, allDstForks, logs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.value(), 12);
@@ -196,72 +177,37 @@ contract LayerZeroHelperTest is Test {
     function _manyCrossChainFunctionInYourContract() internal {
         ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(L1_lzEndpoint);
 
-        bytes memory remoteAndLocalAddresses_1 = abi.encodePacked(
-            address(target),
-            address(this)
-        );
-        bytes memory remoteAndLocalAddresses_2 = abi.encodePacked(
-            address(altTarget),
-            address(this)
+        bytes memory remoteAndLocalAddresses_1 = abi.encodePacked(address(target), address(this));
+        bytes memory remoteAndLocalAddresses_2 = abi.encodePacked(address(altTarget), address(this));
+
+        endpoint.send{value: 1 ether}(
+            POLYGON_ID, remoteAndLocalAddresses_1, abi.encode(uint256(12)), payable(msg.sender), address(0), ""
         );
 
         endpoint.send{value: 1 ether}(
-            POLYGON_ID,
-            remoteAndLocalAddresses_1,
-            abi.encode(uint256(12)),
-            payable(msg.sender),
-            address(0),
-            ""
-        );
-
-        endpoint.send{value: 1 ether}(
-            ARBITRUM_ID,
-            remoteAndLocalAddresses_2,
-            abi.encode(uint256(21)),
-            payable(msg.sender),
-            address(0),
-            ""
+            ARBITRUM_ID, remoteAndLocalAddresses_2, abi.encode(uint256(21)), payable(msg.sender), address(0), ""
         );
     }
 
     function _someCrossChainFunctionInYourContract() internal {
         ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(L1_lzEndpoint);
-        bytes memory remoteAndLocalAddresses = abi.encodePacked(
-            address(target),
-            address(this)
-        );
+        bytes memory remoteAndLocalAddresses = abi.encodePacked(address(target), address(this));
         endpoint.send{value: 1 ether}(
-            POLYGON_ID,
-            remoteAndLocalAddresses,
-            abi.encode(uint256(12)),
-            payable(msg.sender),
-            address(0),
-            ""
+            POLYGON_ID, remoteAndLocalAddresses, abi.encode(uint256(12)), payable(msg.sender), address(0), ""
         );
     }
 
     function _someOtherCrossChainFunctionInYourContract() internal {
         ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(L1_lzEndpoint);
-        bytes memory remoteAndLocalAddresses = abi.encodePacked(
-            address(target),
-            address(this)
-        );
+        bytes memory remoteAndLocalAddresses = abi.encodePacked(address(target), address(this));
         endpoint.send{value: 1 ether}(
-            POLYGON_ID,
-            remoteAndLocalAddresses,
-            abi.encode(uint256(6)),
-            payable(msg.sender),
-            address(0),
-            ""
+            POLYGON_ID, remoteAndLocalAddresses, abi.encode(uint256(6)), payable(msg.sender), address(0), ""
         );
     }
 
     function _aMoreFancyCrossChainFunctionInYourContract() internal {
         ILayerZeroEndpoint endpoint = ILayerZeroEndpoint(L1_lzEndpoint);
-        bytes memory remoteAndLocalAddresses = abi.encodePacked(
-            address(anotherTarget),
-            address(this)
-        );
+        bytes memory remoteAndLocalAddresses = abi.encodePacked(address(anotherTarget), address(this));
         endpoint.send{value: 1 ether}(
             POLYGON_ID,
             remoteAndLocalAddresses,
