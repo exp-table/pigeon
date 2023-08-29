@@ -37,11 +37,16 @@ contract Target {
     uint256 public value;
 
     function sgReceive(
-        uint16, /// _srcChainId
-        bytes memory, /// _srcAddress
-        uint256, /// _nonce
-        address, /// _token
-        uint256, /// amountLD
+        uint16,
+        /// _srcChainId
+        bytes memory,
+        /// _srcAddress
+        uint256,
+        /// _nonce
+        address,
+        /// _token
+        uint256,
+        /// amountLD
         bytes memory payload
     ) external {
         value = abi.decode(payload, (uint256));
@@ -61,10 +66,14 @@ contract AnotherTarget {
 
     function sgReceive(
         uint16 _srcChainId,
-        bytes memory, /// _srcAddress
-        uint256, /// _nonce
-        address, /// _token
-        uint256, /// _amount
+        bytes memory,
+        /// _srcAddress
+        uint256,
+        /// _nonce
+        address,
+        /// _token
+        uint256,
+        /// _amount
         bytes memory payload
     ) external {
         require(_srcChainId == expectedId, "Unexpected id");
@@ -120,11 +129,7 @@ contract StargateHelperTest is Test {
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
         // tolerated margin of $2
-        assertApproxEqAbs(
-            L2token.balanceOf(address(target)),
-            10 ** 9,
-            2 * 10 ** 6
-        );
+        assertApproxEqAbs(L2token.balanceOf(address(target)), 10 ** 9, 2 * 10 ** 6);
     }
 
     function testSimpleSGWithEstimates() external {
@@ -138,11 +143,7 @@ contract StargateHelperTest is Test {
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
         // tolerated margin of $2
-        assertApproxEqAbs(
-            L2token.balanceOf(address(target)),
-            10 ** 9,
-            2 * 10 ** 6
-        );
+        assertApproxEqAbs(L2token.balanceOf(address(target)), 10 ** 9, 2 * 10 ** 6);
     }
 
     function testFancySG() external {
@@ -157,11 +158,7 @@ contract StargateHelperTest is Test {
         assertEq(anotherTarget.value(), 12);
         assertEq(anotherTarget.kevin(), msg.sender);
         assertEq(anotherTarget.bob(), keccak256("bob"));
-        assertApproxEqAbs(
-            L2token.balanceOf(address(anotherTarget)),
-            10 ** 9,
-            2 * 10 ** 6
-        );
+        assertApproxEqAbs(L2token.balanceOf(address(anotherTarget)), 10 ** 9, 2 * 10 ** 6);
     }
 
     function testCustomOrderingSG() external {
@@ -183,11 +180,7 @@ contract StargateHelperTest is Test {
 
         vm.selectFork(L2_FORK_ID);
         assertEq(target.value(), 12);
-        assertApproxEqAbs(
-            L2token.balanceOf(address(target)),
-            2 * 10 ** 9,
-            2 * 10 ** 6
-        );
+        assertApproxEqAbs(L2token.balanceOf(address(target)), 2 * 10 ** 9, 2 * 10 ** 6);
     }
 
     function _someCrossChainFunctionInYourContract() internal {

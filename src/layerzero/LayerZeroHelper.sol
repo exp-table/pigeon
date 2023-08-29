@@ -26,50 +26,26 @@ interface ILayerZeroEndpoint {
 }
 
 contract LayerZeroHelper is Test {
-    bytes32 constant PACKET_SELECTOR =
-        0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82;
-    address constant DEFAULT_LIBRARY =
-        0x4D73AdB72bC3DD368966edD0f0b2148401A178E2;
+    bytes32 constant PACKET_SELECTOR = 0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82;
+    address constant DEFAULT_LIBRARY = 0x4D73AdB72bC3DD368966edD0f0b2148401A178E2;
 
     // handle atomic multi destination packets
     function help(
         address[] memory endpoints,
-        uint16[] memory expChainIds, /// expected chain ids
+        uint16[] memory expChainIds,
+        /// expected chain ids
         uint256 gasToSend,
         uint256[] memory forkId,
         Vm.Log[] calldata logs
     ) external {
         for (uint256 i = 0; i < expChainIds.length; i++) {
-            _help(
-                endpoints[i],
-                expChainIds[i],
-                DEFAULT_LIBRARY,
-                gasToSend,
-                PACKET_SELECTOR,
-                forkId[i],
-                logs,
-                false
-            );
+            _help(endpoints[i], expChainIds[i], DEFAULT_LIBRARY, gasToSend, PACKET_SELECTOR, forkId[i], logs, false);
         }
     }
 
     // hardcoded defaultLibrary on ETH and Packet event selector
-    function help(
-        address endpoint,
-        uint256 gasToSend,
-        uint256 forkId,
-        Vm.Log[] calldata logs
-    ) external {
-        _help(
-            endpoint,
-            0,
-            DEFAULT_LIBRARY,
-            gasToSend,
-            PACKET_SELECTOR,
-            forkId,
-            logs,
-            false
-        );
+    function help(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
+        _help(endpoint, 0, DEFAULT_LIBRARY, gasToSend, PACKET_SELECTOR, forkId, logs, false);
     }
 
     function help(
@@ -80,22 +56,14 @@ contract LayerZeroHelper is Test {
         uint256 forkId,
         Vm.Log[] calldata logs
     ) external {
-        _help(
-            endpoint,
-            0,
-            defaultLibrary,
-            gasToSend,
-            eventSelector,
-            forkId,
-            logs,
-            false
-        );
+        _help(endpoint, 0, defaultLibrary, gasToSend, eventSelector, forkId, logs, false);
     }
 
     // process multi destination payloads
     function helpWithEstimates(
         address[] memory endpoints,
-        uint16[] memory expChainIds, /// expected chain ids
+        uint16[] memory expChainIds,
+        /// expected chain ids
         uint256 gasToSend,
         uint256[] memory forkId,
         Vm.Log[] calldata logs
@@ -116,23 +84,9 @@ contract LayerZeroHelper is Test {
     }
 
     // hardcoded defaultLibrary on ETH and Packet event selector
-    function helpWithEstimates(
-        address endpoint,
-        uint256 gasToSend,
-        uint256 forkId,
-        Vm.Log[] calldata logs
-    ) external {
+    function helpWithEstimates(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
         bool enableEstimates = vm.envOr("ENABLE_LZ_ESTIMATES", false);
-        _help(
-            endpoint,
-            0,
-            DEFAULT_LIBRARY,
-            gasToSend,
-            PACKET_SELECTOR,
-            forkId,
-            logs,
-            enableEstimates
-        );
+        _help(endpoint, 0, DEFAULT_LIBRARY, gasToSend, PACKET_SELECTOR, forkId, logs, enableEstimates);
     }
 
     function helpWithEstimates(
@@ -144,30 +98,18 @@ contract LayerZeroHelper is Test {
         Vm.Log[] calldata logs
     ) external {
         bool enableEstimates = vm.envOr("ENABLE_LZ_ESTIMATES", false);
-        _help(
-            endpoint,
-            0,
-            defaultLibrary,
-            gasToSend,
-            eventSelector,
-            forkId,
-            logs,
-            enableEstimates
-        );
+        _help(endpoint, 0, defaultLibrary, gasToSend, eventSelector, forkId, logs, enableEstimates);
     }
 
-    function findLogs(
-        Vm.Log[] calldata logs,
-        uint256 length
-    ) external pure returns (Vm.Log[] memory lzLogs) {
+    function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory lzLogs) {
         return _findLogs(logs, PACKET_SELECTOR, length);
     }
 
-    function findLogs(
-        Vm.Log[] calldata logs,
-        bytes32 eventSelector,
-        uint256 length
-    ) external pure returns (Vm.Log[] memory lzLogs) {
+    function findLogs(Vm.Log[] calldata logs, bytes32 eventSelector, uint256 length)
+        external
+        pure
+        returns (Vm.Log[] memory lzLogs)
+    {
         return _findLogs(logs, eventSelector, length);
     }
 
@@ -189,19 +131,14 @@ contract LayerZeroHelper is Test {
             Vm.Log memory log = logs[i];
             // unsure if the default library always emits the event
             if (
-                /*log.emitter == defaultLibrary &&*/ log.topics[0] ==
-                eventSelector
+                log
+                    /*log.emitter == defaultLibrary &&*/
+                    .topics[0] == eventSelector
             ) {
                 bytes memory payload = abi.decode(log.data, (bytes));
-                LayerZeroPacket.Packet memory packet = LayerZeroPacket
-                    .getPacket(payload);
+                LayerZeroPacket.Packet memory packet = LayerZeroPacket.getPacket(payload);
                 if (packet.dstChainId == expChainId || expChainId == 0) {
-                    _receivePayload(
-                        endpoint,
-                        packet,
-                        gasToSend,
-                        enableEstimates
-                    );
+                    _receivePayload(endpoint, packet, gasToSend, enableEstimates);
                 }
             }
         }
@@ -217,13 +154,8 @@ contract LayerZeroHelper is Test {
         bool payInZRO,
         bytes memory adapterParam
     ) internal returns (uint256 gasEstimate) {
-        (uint256 nativeGas, ) = ILayerZeroEndpoint(endpoint).estimateFees(
-            destination,
-            userApplication,
-            payload,
-            payInZRO,
-            adapterParam
-        );
+        (uint256 nativeGas,) =
+            ILayerZeroEndpoint(endpoint).estimateFees(destination, userApplication, payload, payInZRO, adapterParam);
         return nativeGas;
     }
 
@@ -233,50 +165,29 @@ contract LayerZeroHelper is Test {
         uint256 gasToSend,
         bool enableEstimates
     ) internal {
-        bytes memory path = abi.encodePacked(
-            packet.srcAddress,
-            packet.dstAddress
-        );
+        bytes memory path = abi.encodePacked(packet.srcAddress, packet.dstAddress);
         vm.store(
             address(endpoint),
-            keccak256(
-                abi.encodePacked(
-                    path,
-                    keccak256(
-                        abi.encodePacked(uint256(packet.srcChainId), uint256(5))
-                    )
-                )
-            ),
+            keccak256(abi.encodePacked(path, keccak256(abi.encodePacked(uint256(packet.srcChainId), uint256(5))))),
             bytes32(uint256(packet.nonce))
         );
 
         ILayerZeroEndpoint(endpoint).receivePayload(
-            packet.srcChainId,
-            path,
-            packet.dstAddress,
-            packet.nonce + 1,
-            gasToSend,
-            packet.payload
+            packet.srcChainId, path, packet.dstAddress, packet.nonce + 1, gasToSend, packet.payload
         );
 
         if (enableEstimates) {
-            uint256 gasEstimate = _estimateGas(
-                endpoint,
-                packet.dstChainId,
-                packet.dstAddress,
-                packet.payload,
-                false,
-                ""
-            );
+            uint256 gasEstimate =
+                _estimateGas(endpoint, packet.dstChainId, packet.dstAddress, packet.payload, false, "");
             emit log_named_uint("gasEstimate", gasEstimate);
         }
     }
 
-    function _findLogs(
-        Vm.Log[] memory logs,
-        bytes32 eventSelector,
-        uint256 length
-    ) internal pure returns (Vm.Log[] memory lzLogs) {
+    function _findLogs(Vm.Log[] memory logs, bytes32 eventSelector, uint256 length)
+        internal
+        pure
+        returns (Vm.Log[] memory lzLogs)
+    {
         lzLogs = new Vm.Log[](length);
 
         uint256 currentIndex = 0;

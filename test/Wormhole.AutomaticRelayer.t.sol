@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// library imports
 import "forge-std/Test.sol";
-import "src/wormhole/WormholeHelper.sol";
+
+/// local imports
+import "src/wormhole/automatic-relayer/WormholeHelper.sol";
 
 interface IWormholeRelayerSend {
     function sendPayloadToEvm(
@@ -23,17 +26,10 @@ interface IWormholeRelayerSend {
         address refundAddress
     ) external payable returns (uint64 sequence);
 
-    function quoteEVMDeliveryPrice(
-        uint16 targetChain,
-        uint256 receiverValue,
-        uint256 gasLimit
-    )
+    function quoteEVMDeliveryPrice(uint16 targetChain, uint256 receiverValue, uint256 gasLimit)
         external
         view
-        returns (
-            uint256 nativePriceQuote,
-            uint256 targetChainRefundPerGasUnused
-        );
+        returns (uint256 nativePriceQuote, uint256 targetChainRefundPerGasUnused);
 }
 
 interface IWormholeRelayer is IWormholeRelayerSend {}
@@ -75,7 +71,7 @@ contract AnotherTarget {
     }
 }
 
-contract WormholeHelperTest is Test {
+contract WormholeAutomaticRelayerHelperTest is Test {
     WormholeHelper wormholeHelper;
     Target target;
     Target altTarget;
@@ -153,10 +149,7 @@ contract WormholeHelperTest is Test {
         vm.selectFork(L1_FORK_ID);
 
         vm.recordLogs();
-        _aMoreFancyCrossChainFunctionInYourContract(
-            L2_1_CHAIN_ID,
-            address(anotherTarget)
-        );
+        _aMoreFancyCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(anotherTarget));
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         wormholeHelper.help(L1_CHAIN_ID, POLYGON_FORK_ID, L2_2_RELAYER, logs);
@@ -183,12 +176,7 @@ contract WormholeHelperTest is Test {
         reorderedLogs[0] = WormholeLogs[1];
         reorderedLogs[1] = WormholeLogs[0];
 
-        wormholeHelper.help(
-            L1_CHAIN_ID,
-            POLYGON_FORK_ID,
-            L2_1_RELAYER,
-            reorderedLogs
-        );
+        wormholeHelper.help(L1_CHAIN_ID, POLYGON_FORK_ID, L2_1_RELAYER, reorderedLogs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.value(), CROSS_CHAIN_MESSAGE);
@@ -200,20 +188,11 @@ contract WormholeHelperTest is Test {
         vm.recordLogs();
 
         _someCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(target));
-        _someCrossChainFunctionInYourContract(
-            L2_2_CHAIN_ID,
-            address(altTarget)
-        );
+        _someCrossChainFunctionInYourContract(L2_2_CHAIN_ID, address(altTarget));
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
 
-        wormholeHelper.help(
-            L1_CHAIN_ID,
-            allDstForks,
-            allDstTargets,
-            allDstRelayers,
-            logs
-        );
+        wormholeHelper.help(L1_CHAIN_ID, allDstForks, allDstTargets, allDstRelayers, logs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.value(), CROSS_CHAIN_MESSAGE);
@@ -222,17 +201,10 @@ contract WormholeHelperTest is Test {
         assertEq(altTarget.value(), CROSS_CHAIN_MESSAGE);
     }
 
-    function _aMoreFancyCrossChainFunctionInYourContract(
-        uint16 dstChainId,
-        address receiver
-    ) internal {
+    function _aMoreFancyCrossChainFunctionInYourContract(uint16 dstChainId, address receiver) internal {
         IWormholeRelayer relayer = IWormholeRelayer(L1_RELAYER);
 
-        (uint256 msgValue, ) = relayer.quoteEVMDeliveryPrice(
-            dstChainId,
-            0,
-            500000
-        );
+        (uint256 msgValue,) = relayer.quoteEVMDeliveryPrice(dstChainId, 0, 500000);
 
         relayer.sendPayloadToEvm{value: msgValue}(
             dstChainId,
@@ -245,26 +217,13 @@ contract WormholeHelperTest is Test {
         );
     }
 
-    function _someCrossChainFunctionInYourContract(
-        uint16 dstChainId,
-        address receiver
-    ) internal {
+    function _someCrossChainFunctionInYourContract(uint16 dstChainId, address receiver) internal {
         IWormholeRelayer relayer = IWormholeRelayer(L1_RELAYER);
 
-        (uint256 msgValue, ) = relayer.quoteEVMDeliveryPrice(
-            dstChainId,
-            0,
-            500000
-        );
+        (uint256 msgValue,) = relayer.quoteEVMDeliveryPrice(dstChainId, 0, 500000);
 
         relayer.sendPayloadToEvm{value: msgValue}(
-            dstChainId,
-            receiver,
-            abi.encode(CROSS_CHAIN_MESSAGE),
-            0,
-            500000,
-            L1_CHAIN_ID,
-            address(this)
+            dstChainId, receiver, abi.encode(CROSS_CHAIN_MESSAGE), 0, 500000, L1_CHAIN_ID, address(this)
         );
     }
 }

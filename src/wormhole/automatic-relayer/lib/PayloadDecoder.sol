@@ -26,9 +26,7 @@ library PayloadDecoder {
     //    inefficient (unless the optimizer is smart enough to just concatenate them tail-recursion
     //    style which seems highly unlikely)
 
-    function encode(
-        DeliveryInstruction memory strct
-    ) internal pure returns (bytes memory encoded) {
+    function encode(DeliveryInstruction memory strct) internal pure returns (bytes memory encoded) {
         encoded = abi.encodePacked(
             PAYLOAD_ID_DELIVERY_INSTRUCTION,
             strct.targetChain,
@@ -49,14 +47,8 @@ library PayloadDecoder {
         );
     }
 
-    function decodeDeliveryInstruction(
-        bytes memory encoded
-    ) internal pure returns (DeliveryInstruction memory strct) {
-        uint256 offset = checkUint8(
-            encoded,
-            0,
-            PAYLOAD_ID_DELIVERY_INSTRUCTION
-        );
+    function decodeDeliveryInstruction(bytes memory encoded) internal pure returns (DeliveryInstruction memory strct) {
+        uint256 offset = checkUint8(encoded, 0, PAYLOAD_ID_DELIVERY_INSTRUCTION);
 
         uint256 requestedReceiverValue;
         uint256 extraReceiverValue;
@@ -69,26 +61,18 @@ library PayloadDecoder {
         (strct.encodedExecutionInfo, offset) = decodeBytes(encoded, offset);
         (strct.refundChain, offset) = encoded.asUint16Unchecked(offset);
         (strct.refundAddress, offset) = encoded.asBytes32Unchecked(offset);
-        (strct.refundDeliveryProvider, offset) = encoded.asBytes32Unchecked(
-            offset
-        );
-        (strct.sourceDeliveryProvider, offset) = encoded.asBytes32Unchecked(
-            offset
-        );
+        (strct.refundDeliveryProvider, offset) = encoded.asBytes32Unchecked(offset);
+        (strct.sourceDeliveryProvider, offset) = encoded.asBytes32Unchecked(offset);
         (strct.senderAddress, offset) = encoded.asBytes32Unchecked(offset);
         (strct.vaaKeys, offset) = decodeVaaKeyArray(encoded, offset);
 
-        strct.requestedReceiverValue = TargetNative.wrap(
-            requestedReceiverValue
-        );
+        strct.requestedReceiverValue = TargetNative.wrap(requestedReceiverValue);
         strct.extraReceiverValue = TargetNative.wrap(extraReceiverValue);
 
         checkLength(encoded, offset);
     }
 
-    function encode(
-        RedeliveryInstruction memory strct
-    ) internal pure returns (bytes memory encoded) {
+    function encode(RedeliveryInstruction memory strct) internal pure returns (bytes memory encoded) {
         bytes memory vaaKey = encodeVaaKey(strct.deliveryVaaKey);
         encoded = abi.encodePacked(
             PAYLOAD_ID_REDELIVERY_INSTRUCTION,
@@ -101,49 +85,34 @@ library PayloadDecoder {
         );
     }
 
-    function decodeRedeliveryInstruction(
-        bytes memory encoded
-    ) internal pure returns (RedeliveryInstruction memory strct) {
-        uint256 offset = checkUint8(
-            encoded,
-            0,
-            PAYLOAD_ID_REDELIVERY_INSTRUCTION
-        );
+    function decodeRedeliveryInstruction(bytes memory encoded)
+        internal
+        pure
+        returns (RedeliveryInstruction memory strct)
+    {
+        uint256 offset = checkUint8(encoded, 0, PAYLOAD_ID_REDELIVERY_INSTRUCTION);
 
         uint256 newRequestedReceiverValue;
 
         (strct.deliveryVaaKey, offset) = decodeVaaKey(encoded, offset);
         (strct.targetChain, offset) = encoded.asUint16Unchecked(offset);
-        (newRequestedReceiverValue, offset) = encoded.asUint256Unchecked(
-            offset
-        );
+        (newRequestedReceiverValue, offset) = encoded.asUint256Unchecked(offset);
         (strct.newEncodedExecutionInfo, offset) = decodeBytes(encoded, offset);
-        (strct.newSourceDeliveryProvider, offset) = encoded.asBytes32Unchecked(
-            offset
-        );
+        (strct.newSourceDeliveryProvider, offset) = encoded.asBytes32Unchecked(offset);
         (strct.newSenderAddress, offset) = encoded.asBytes32Unchecked(offset);
 
-        strct.newRequestedReceiverValue = TargetNative.wrap(
-            newRequestedReceiverValue
-        );
+        strct.newRequestedReceiverValue = TargetNative.wrap(newRequestedReceiverValue);
 
         checkLength(encoded, offset);
     }
 
-    function encode(
-        DeliveryOverride memory strct
-    ) internal pure returns (bytes memory encoded) {
+    function encode(DeliveryOverride memory strct) internal pure returns (bytes memory encoded) {
         encoded = abi.encodePacked(
-            VERSION_DELIVERY_OVERRIDE,
-            strct.newReceiverValue,
-            encodeBytes(strct.newExecutionInfo),
-            strct.redeliveryHash
+            VERSION_DELIVERY_OVERRIDE, strct.newReceiverValue, encodeBytes(strct.newExecutionInfo), strct.redeliveryHash
         );
     }
 
-    function decodeDeliveryOverride(
-        bytes memory encoded
-    ) internal pure returns (DeliveryOverride memory strct) {
+    function decodeDeliveryOverride(bytes memory encoded) internal pure returns (DeliveryOverride memory strct) {
         uint256 offset = checkUint8(encoded, 0, VERSION_DELIVERY_OVERRIDE);
 
         uint256 receiverValue;
@@ -159,12 +128,10 @@ library PayloadDecoder {
 
     // ------------------------------------------ private --------------------------------------------
 
-    function encodeVaaKeyArray(
-        VaaKey[] memory vaaKeys
-    ) private pure returns (bytes memory encoded) {
+    function encodeVaaKeyArray(VaaKey[] memory vaaKeys) private pure returns (bytes memory encoded) {
         assert(vaaKeys.length < type(uint8).max);
         encoded = abi.encodePacked(uint8(vaaKeys.length));
-        for (uint256 i = 0; i < vaaKeys.length; ) {
+        for (uint256 i = 0; i < vaaKeys.length;) {
             encoded = abi.encodePacked(encoded, encodeVaaKey(vaaKeys[i]));
             unchecked {
                 ++i;
@@ -172,14 +139,15 @@ library PayloadDecoder {
         }
     }
 
-    function decodeVaaKeyArray(
-        bytes memory encoded,
-        uint256 startOffset
-    ) private pure returns (VaaKey[] memory vaaKeys, uint256 offset) {
+    function decodeVaaKeyArray(bytes memory encoded, uint256 startOffset)
+        private
+        pure
+        returns (VaaKey[] memory vaaKeys, uint256 offset)
+    {
         uint8 vaaKeysLength;
         (vaaKeysLength, offset) = encoded.asUint8Unchecked(startOffset);
         vaaKeys = new VaaKey[](vaaKeysLength);
-        for (uint256 i = 0; i < vaaKeys.length; ) {
+        for (uint256 i = 0; i < vaaKeys.length;) {
             (vaaKeys[i], offset) = decodeVaaKey(encoded, offset);
             unchecked {
                 ++i;
@@ -187,50 +155,42 @@ library PayloadDecoder {
         }
     }
 
-    function encodeVaaKey(
-        VaaKey memory vaaKey
-    ) private pure returns (bytes memory encoded) {
-        encoded = abi.encodePacked(
-            encoded,
-            VERSION_VAAKEY,
-            vaaKey.chainId,
-            vaaKey.emitterAddress,
-            vaaKey.sequence
-        );
+    function encodeVaaKey(VaaKey memory vaaKey) private pure returns (bytes memory encoded) {
+        encoded = abi.encodePacked(encoded, VERSION_VAAKEY, vaaKey.chainId, vaaKey.emitterAddress, vaaKey.sequence);
     }
 
-    function decodeVaaKey(
-        bytes memory encoded,
-        uint256 startOffset
-    ) private pure returns (VaaKey memory vaaKey, uint256 offset) {
+    function decodeVaaKey(bytes memory encoded, uint256 startOffset)
+        private
+        pure
+        returns (VaaKey memory vaaKey, uint256 offset)
+    {
         offset = checkUint8(encoded, startOffset, VERSION_VAAKEY);
         (vaaKey.chainId, offset) = encoded.asUint16Unchecked(offset);
         (vaaKey.emitterAddress, offset) = encoded.asBytes32Unchecked(offset);
         (vaaKey.sequence, offset) = encoded.asUint64Unchecked(offset);
     }
 
-    function encodeBytes(
-        bytes memory payload
-    ) private pure returns (bytes memory encoded) {
+    function encodeBytes(bytes memory payload) private pure returns (bytes memory encoded) {
         //casting payload.length to uint32 is safe because you'll be hard-pressed to allocate 4 GB of
         //  EVM memory in a single transaction
         encoded = abi.encodePacked(uint32(payload.length), payload);
     }
 
-    function decodeBytes(
-        bytes memory encoded,
-        uint256 startOffset
-    ) private pure returns (bytes memory payload, uint256 offset) {
+    function decodeBytes(bytes memory encoded, uint256 startOffset)
+        private
+        pure
+        returns (bytes memory payload, uint256 offset)
+    {
         uint32 payloadLength;
         (payloadLength, offset) = encoded.asUint32Unchecked(startOffset);
         (payload, offset) = encoded.sliceUnchecked(offset, payloadLength);
     }
 
-    function checkUint8(
-        bytes memory encoded,
-        uint256 startOffset,
-        uint8 expectedPayloadId
-    ) private pure returns (uint256 offset) {
+    function checkUint8(bytes memory encoded, uint256 startOffset, uint8 expectedPayloadId)
+        private
+        pure
+        returns (uint256 offset)
+    {
         uint8 parsedPayloadId;
         (parsedPayloadId, offset) = encoded.asUint8Unchecked(startOffset);
         if (parsedPayloadId != expectedPayloadId) {}

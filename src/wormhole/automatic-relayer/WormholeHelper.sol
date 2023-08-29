@@ -8,7 +8,7 @@ import "forge-std/Test.sol";
 import "./lib/PayloadDecoder.sol";
 import "./lib/InternalStructs.sol";
 
-import {TypeCasts} from "../libraries/TypeCasts.sol";
+import {TypeCasts} from "../../libraries/TypeCasts.sol";
 
 /// @dev interface that every wormhole receiver should implement
 /// @notice the helper will try to deliver the message to this interface
@@ -33,8 +33,7 @@ contract WormholeHelper is Test {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev LogMessagePublished (index_topic_1 address sender, uint64 sequence, uint32 nonce, bytes payload, uint8 consistencyLevel)
-    bytes32 constant MESSAGE_EVENT_SELECTOR =
-        0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2;
+    bytes32 constant MESSAGE_EVENT_SELECTOR = 0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2;
 
     /*///////////////////////////////////////////////////////////////
                              EXTERNAL FUNCTIONS
@@ -45,20 +44,8 @@ contract WormholeHelper is Test {
     /// @param dstForkId is the dst fork id to deliver the message
     /// @param dstRelayer is wormhole's dst chain relayer
     /// @param logs is the logs after message dispatch on src chain
-    function help(
-        uint16 srcChainId,
-        uint256 dstForkId,
-        address dstRelayer,
-        Vm.Log[] calldata logs
-    ) external {
-        _help(
-            srcChainId,
-            dstForkId,
-            address(0),
-            dstRelayer,
-            MESSAGE_EVENT_SELECTOR,
-            logs
-        );
+    function help(uint16 srcChainId, uint256 dstForkId, address dstRelayer, Vm.Log[] calldata logs) external {
+        _help(srcChainId, dstForkId, address(0), dstRelayer, MESSAGE_EVENT_SELECTOR, logs);
     }
 
     /// @dev single dst x user-specific event selector
@@ -73,14 +60,7 @@ contract WormholeHelper is Test {
         bytes32 msgEventSelector,
         Vm.Log[] calldata logs
     ) external {
-        _help(
-            srcChainId,
-            dstForkId,
-            address(0),
-            dstRelayer,
-            msgEventSelector,
-            logs
-        );
+        _help(srcChainId, dstForkId, address(0), dstRelayer, msgEventSelector, logs);
     }
 
     /// @dev multi dst x default event selector
@@ -95,15 +75,8 @@ contract WormholeHelper is Test {
         address[] calldata dstRelayer,
         Vm.Log[] calldata logs
     ) external {
-        for (uint256 i; i < dstForkId.length; ) {
-            _help(
-                srcChainId,
-                dstForkId[i],
-                expDstAddress[i],
-                dstRelayer[i],
-                MESSAGE_EVENT_SELECTOR,
-                logs
-            );
+        for (uint256 i; i < dstForkId.length;) {
+            _help(srcChainId, dstForkId[i], expDstAddress[i], dstRelayer[i], MESSAGE_EVENT_SELECTOR, logs);
 
             unchecked {
                 ++i;
@@ -124,15 +97,8 @@ contract WormholeHelper is Test {
         bytes32 msgEventSelector,
         Vm.Log[] calldata logs
     ) external {
-        for (uint256 i; i < dstForkId.length; ) {
-            _help(
-                srcChainId,
-                dstForkId[i],
-                expDstAddress[i],
-                dstRelayer[i],
-                msgEventSelector,
-                logs
-            );
+        for (uint256 i; i < dstForkId.length;) {
+            _help(srcChainId, dstForkId[i], expDstAddress[i], dstRelayer[i], msgEventSelector, logs);
 
             unchecked {
                 ++i;
@@ -141,10 +107,7 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helps find logs of `length` for default event selector
-    function findLogs(
-        Vm.Log[] calldata logs,
-        uint256 length
-    ) external pure returns (Vm.Log[] memory HLLogs) {
+    function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
         return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
     }
 
@@ -179,28 +142,22 @@ contract WormholeHelper is Test {
             Vm.Log memory log = logs[i];
 
             if (log.topics[0] == eventSelector) {
-                (v.sequence, v.nonce, v.payload, ) = abi.decode(
-                    log.data,
-                    (uint64, uint32, bytes, uint8)
-                );
+                (v.sequence, v.nonce, v.payload,) = abi.decode(log.data, (uint64, uint32, bytes, uint8));
 
-                DeliveryInstruction memory instruction = PayloadDecoder
-                    .decodeDeliveryInstruction(v.payload);
+                DeliveryInstruction memory instruction = PayloadDecoder.decodeDeliveryInstruction(v.payload);
 
-                v.dstAddress = TypeCasts.bytes32ToAddress(
-                    instruction.targetAddress
-                );
+                v.dstAddress = TypeCasts.bytes32ToAddress(instruction.targetAddress);
 
-                if (
-                    expDstAddress == address(0) || expDstAddress == v.dstAddress
-                )
+                if (expDstAddress == address(0) || expDstAddress == v.dstAddress) {
                     IWormholeReceiver(v.dstAddress).receiveWormholeMessages(
                         instruction.payload,
                         new bytes[](0),
                         instruction.senderAddress,
                         srcChainId,
-                        keccak256(abi.encodePacked(v.sequence, v.nonce)) /// @dev generating some random hash
+                        keccak256(abi.encodePacked(v.sequence, v.nonce))
                     );
+                    /// @dev generating some random hash
+                }
             }
         }
 
@@ -209,11 +166,11 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helper to get logs
-    function _findLogs(
-        Vm.Log[] memory logs,
-        bytes32 dispatchSelector,
-        uint256 length
-    ) internal pure returns (Vm.Log[] memory WormholeLogs) {
+    function _findLogs(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
+        internal
+        pure
+        returns (Vm.Log[] memory WormholeLogs)
+    {
         WormholeLogs = new Vm.Log[](length);
 
         uint256 currentIndex = 0;

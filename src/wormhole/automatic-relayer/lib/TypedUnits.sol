@@ -15,15 +15,7 @@ type LocalNative is uint256;
 
 type TargetNative is uint256;
 
-using {
-    addWei as +,
-    subWei as -,
-    lteWei as <=,
-    ltWei as <,
-    gtWei as >,
-    eqWei as ==,
-    neqWei as !=
-} for Wei global;
+using {addWei as +, subWei as -, lteWei as <=, ltWei as <, gtWei as >, eqWei as ==, neqWei as !=} for Wei global;
 using {addTargetNative as +, subTargetNative as -} for TargetNative global;
 using {
     leLocalNative as <,
@@ -32,11 +24,7 @@ using {
     addLocalNative as +,
     subLocalNative as -
 } for LocalNative global;
-using {
-    ltGas as <,
-    lteGas as <=,
-    subGas as -
-} for Gas global;
+using {ltGas as <, lteGas as <=, subGas as -} for Gas global;
 
 using WeiLib for Wei;
 using GasLib for Gas;
@@ -114,16 +102,7 @@ function leqLocalNative(LocalNative a, LocalNative b) pure returns (bool) {
 
 library WeiLib {
     using {
-        toDollars,
-        toGas,
-        convertAsset,
-        min,
-        max,
-        scale,
-        unwrap,
-        asGasPrice,
-        asTargetNative,
-        asLocalNative
+        toDollars, toGas, convertAsset, min, max, scale, unwrap, asGasPrice, asTargetNative, asLocalNative
     } for Wei;
 
     function min(Wei x, Wei maxVal) internal pure returns (Wei) {

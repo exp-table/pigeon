@@ -8,22 +8,17 @@ library AddressHelper {
         return address(_addressBytes);
     }
 
-    function remove0xPrefix(
-        string memory _hexString
-    ) internal pure returns (string memory) {
+    function remove0xPrefix(string memory _hexString) internal pure returns (string memory) {
         if (
-            bytes(_hexString).length >= 2 &&
-            bytes(_hexString)[0] == "0" &&
-            (bytes(_hexString)[1] == "x" || bytes(_hexString)[1] == "X")
+            bytes(_hexString).length >= 2 && bytes(_hexString)[0] == "0"
+                && (bytes(_hexString)[1] == "x" || bytes(_hexString)[1] == "X")
         ) {
             return substring(_hexString, 2, bytes(_hexString).length);
         }
         return _hexString;
     }
 
-    function parseHexStringToBytes20(
-        string memory _hexString
-    ) internal pure returns (bytes20) {
+    function parseHexStringToBytes20(string memory _hexString) internal pure returns (bytes20) {
         bytes memory _bytesString = bytes(_hexString);
         uint160 _parsedBytes = 0;
         for (uint256 i = 0; i < _bytesString.length; i += 2) {
@@ -48,11 +43,7 @@ library AddressHelper {
         }
     }
 
-    function substring(
-        string memory _str,
-        uint256 _start,
-        uint256 _end
-    ) internal pure returns (string memory) {
+    function substring(string memory _str, uint256 _start, uint256 _end) internal pure returns (string memory) {
         bytes memory _strBytes = bytes(_str);
         bytes memory _result = new bytes(_end - _start);
         for (uint256 i = _start; i < _end; i++) {
