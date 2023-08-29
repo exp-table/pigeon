@@ -90,7 +90,6 @@ contract AxelarHelper is Test {
             if (v.log.topics[0] == eventSelector) {
                 (v.destinationChain, v.destinationContract, v.payload) = abi.decode(v.log.data, (string, string, bytes));
 
-                /// FIXME: length based checks aren't sufficient
                 if (isStringsEqual(expDstChain, v.destinationChain)) {
                     string memory srcAddress = AddressHelper.toString(address(uint160(uint256(v.log.topics[1]))));
                     address dstContract = AddressHelper.fromString(v.destinationContract);
