@@ -154,14 +154,19 @@ contract WormholeHelper is Test {
     }
 
     /// @dev overrides the guardian set by choosing slot
-    /// TODO: slot works till the guardianSetIndex is 3
+    /// @notice overrides the current guardian set with a set of known guardian set
     function _prepareWormhole(address dstWormhole) internal {
         IWormhole wormhole = IWormhole(dstWormhole);
-        bytes32 lastSlot = 0x2fc7941cecc943bf2000c5d7068f2b8c8e9a29be62acd583fe9e6e90489a8c82;
+
+        uint32 currentGuardianSet = wormhole.getCurrentGuardianSetIndex();
+        bytes32 guardianSetSlot = keccak256(abi.encode(currentGuardianSet, 2));
+        uint256 numGuardians = uint256(vm.load(address(wormhole), guardianSetSlot));
+
+        bytes32 lastSlot = bytes32(uint256(keccak256(abi.encodePacked(guardianSetSlot))));
         uint256 lastKey = 420;
 
         /// @dev updates the storage slot to update the guardian set
-        for (uint256 i; i < 19; i++) {
+        for (uint256 i; i < numGuardians; i++) {
             vm.store(address(wormhole), bytes32(lastSlot), TypeCasts.addressToBytes32(vm.addr(lastKey)));
             lastSlot = bytes32(uint256(lastSlot) + 1);
             ++lastKey;
