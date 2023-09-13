@@ -45,7 +45,7 @@ library LayerZeroPacket {
             assembly {
                 toAdd := mload(add(data, i))
             }
-            payloadBuffer.append(abi.encode(toAdd));
+            payloadBuffer.p(abi.encode(toAdd));
             i += 32;
         }
         packet.nonce = nonce;
