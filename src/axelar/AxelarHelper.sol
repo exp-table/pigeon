@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// library imports
 import "forge-std/Test.sol";
+
+/// local imports
 import {AddressHelper} from "../axelar/lib/AddressHelper.sol";
 
 interface IAxelarExecutable {
@@ -15,16 +18,26 @@ interface IAxelarExecutable {
 
 interface IAxelarGateway {
     function approveContractCall(bytes calldata params, bytes32 commandId) external;
-
     function callContract(string calldata destinationChain, string calldata contractAddress, bytes calldata payload)
         external;
 }
 
 /// @title Axelar Helper
-/// @notice helps mock the message transfer using axelar bridge
+/// @notice helps simulate the message transfer using axelar bridge
 contract AxelarHelper is Test {
+    /// @dev is the default event selector if not specified by the user
     bytes32 constant MESSAGE_EVENT_SELECTOR = 0x30ae6cc78c27e651745bf2ad08a11de83910ac1e347a52f7ac898c0fbef94dae;
 
+    //////////////////////////////////////////////////////////////
+    //                  EXTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice helps with multiple destination transfers
+    /// @param fromChain represents the source chain
+    /// @param toGateway represents the destination gateway addresses
+    /// @param expDstChain represents the expected destination chains
+    /// @param forkId array of destination fork ids (localized to your testing)
+    /// @param logs array of logs
     function help(
         string memory fromChain,
         address[] memory toGateway,
@@ -37,6 +50,13 @@ contract AxelarHelper is Test {
         }
     }
 
+    /// @notice helps with a single destination transfer with a specific event selector
+    /// @param fromChain represents the source chain
+    /// @param toGateway represents the destination gateway address
+    /// @param expDstChain represents the expected destination chain
+    /// @param forkId represents the destination fork id (localized to your testing)
+    /// @param eventSelector represents the event selector
+    /// @param logs array of logs
     function help(
         string memory fromChain,
         address toGateway,
@@ -48,6 +68,12 @@ contract AxelarHelper is Test {
         _help(fromChain, toGateway, expDstChain, forkId, eventSelector, logs);
     }
 
+    /// @notice helps with a single destination transfer
+    /// @param fromChain represents the source chain
+    /// @param toGateway represents the destination gateway address
+    /// @param expDstChain represents the expected destination chain
+    /// @param forkId represents the destination fork id (localized to your testing)
+    /// @param logs array of logs
     function help(
         string memory fromChain,
         address toGateway,
@@ -58,6 +84,10 @@ contract AxelarHelper is Test {
         _help(fromChain, toGateway, expDstChain, forkId, MESSAGE_EVENT_SELECTOR, logs);
     }
 
+    /// @notice finds logs with a specific event selector
+    /// @param logs array of logs
+    /// @param length expected number of logs
+    /// @return HLLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
         return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
     }
@@ -70,6 +100,17 @@ contract AxelarHelper is Test {
         bytes payload;
     }
 
+    //////////////////////////////////////////////////////////////
+    //                  INTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice internal function to help with destination transfers
+    /// @param fromChain represents the source chain
+    /// @param toGateway represents the destination gateway address
+    /// @param expDstChain represents the expected destination chain
+    /// @param forkId represents the destination fork id (localized to your testing)
+    /// @param eventSelector represents the event selector
+    /// @param logs array of logs
     function _help(
         string memory fromChain,
         address toGateway,
@@ -90,7 +131,7 @@ contract AxelarHelper is Test {
             if (v.log.topics[0] == eventSelector) {
                 (v.destinationChain, v.destinationContract, v.payload) = abi.decode(v.log.data, (string, string, bytes));
 
-                if (isStringsEqual(expDstChain, v.destinationChain)) {
+                if (_isStringsEqual(expDstChain, v.destinationChain)) {
                     string memory srcAddress = AddressHelper.toString(address(uint160(uint256(v.log.topics[1]))));
                     address dstContract = AddressHelper.fromString(v.destinationContract);
 
@@ -114,10 +155,19 @@ contract AxelarHelper is Test {
         vm.selectFork(v.prevForkId);
     }
 
-    function isStringsEqual(string memory a, string memory b) public pure returns (bool) {
+    /// @notice checks if two strings are equal
+    /// @param a first string
+    /// @param b second string
+    /// @return true if the strings are equal, false otherwise
+    function _isStringsEqual(string memory a, string memory b) internal pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
+    /// @notice internal function to find logs with a specific event selector
+    /// @param logs array of logs
+    /// @param dispatchSelector event selector
+    /// @param length expected number of logs
+    /// @return AxelarLogs array of found logs
     function _findLogs(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
         internal
         pure
