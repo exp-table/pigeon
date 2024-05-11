@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// library imports
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
 
+/// local imports
 import "./lib/LZPacket.sol";
 
 interface ILayerZeroEndpoint {
@@ -25,11 +26,26 @@ interface ILayerZeroEndpoint {
     ) external returns (uint256 nativeFee, uint256 zroFee);
 }
 
+/// @title LayerZero Helper
+/// @notice helps simulate message transfers using the LayerZero protocol (version 1)
 contract LayerZeroHelper is Test {
+    /// @dev is the default packet selector if not specified by the user
     bytes32 constant PACKET_SELECTOR = 0xe9bded5f24a4168e4f3bf44e00298c993b22376aad8c58c7dda9718a54cbea82;
+
+    /// @dev is the default library address if not specified by the user
     address constant DEFAULT_LIBRARY = 0x4D73AdB72bC3DD368966edD0f0b2148401A178E2;
 
-    // handle atomic multi destination packets
+    //////////////////////////////////////////////////////////////
+    //                  EXTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice helps with multiple destination transfers
+    /// @param endpoints represents the array of endpoint addresses
+    /// @param expChainIds represents the array of expected chain ids
+    /// @param gasToSend represents the gas to send for message execution
+    /// @param forkId represents the array of destination fork IDs (localized to your testing)
+    /// @param logs represents the array of logs
+
     function help(
         address[] memory endpoints,
         uint16[] memory expChainIds,
@@ -43,11 +59,22 @@ contract LayerZeroHelper is Test {
         }
     }
 
-    // hardcoded defaultLibrary on ETH and Packet event selector
+    /// @notice helps with a single destination transfer (hardcoded default library and packet selector)
+    /// @param endpoint represents the endpoint address
+    /// @param gasToSend represents the gas to send for message execution
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
     function help(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
         _help(endpoint, 0, DEFAULT_LIBRARY, gasToSend, PACKET_SELECTOR, forkId, logs, false);
     }
 
+    /// @notice helps with a single destination transfer (custom default library and event selector)
+    /// @param endpoint represents the endpoint address
+    /// @param defaultLibrary represents the default library address
+    /// @param gasToSend represents the gas to send for message execution
+    /// @param eventSelector represents the event selector
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
     function help(
         address endpoint,
         address defaultLibrary,
@@ -59,7 +86,12 @@ contract LayerZeroHelper is Test {
         _help(endpoint, 0, defaultLibrary, gasToSend, eventSelector, forkId, logs, false);
     }
 
-    // process multi destination payloads
+    /// @notice helps with multiple destination transfers and estimates gas
+    /// @param endpoints represents the array of endpoint addresses
+    /// @param expChainIds represents the array of expected chain ids
+    /// @param gasToSend represents the gas to send for message execution
+    /// @param forkId represents the array of destination fork IDs (localized to your testing)
+    /// @param logs represents the array of logs
     function helpWithEstimates(
         address[] memory endpoints,
         uint16[] memory expChainIds,
@@ -83,12 +115,23 @@ contract LayerZeroHelper is Test {
         }
     }
 
-    // hardcoded defaultLibrary on ETH and Packet event selector
+    /// @notice helps with a single destination transfer and estimates gas (hardcoded default library and packet selector)
+    /// @param endpoint represents the endpoint address
+    /// @param gasToSend represents the gas to send for message execution
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
     function helpWithEstimates(address endpoint, uint256 gasToSend, uint256 forkId, Vm.Log[] calldata logs) external {
         bool enableEstimates = vm.envOr("ENABLE_LZ_ESTIMATES", false);
         _help(endpoint, 0, DEFAULT_LIBRARY, gasToSend, PACKET_SELECTOR, forkId, logs, enableEstimates);
     }
 
+    /// @notice helps with a single destination transfer and estimates gas (custom default library and event selector)
+    /// @param endpoint represents the endpoint address
+    /// @param defaultLibrary represents the default library address
+    /// @param gasToSend represents the gas to send for message execution
+    /// @param eventSelector represents the event selector
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
     function helpWithEstimates(
         address endpoint,
         address defaultLibrary,
@@ -101,10 +144,19 @@ contract LayerZeroHelper is Test {
         _help(endpoint, 0, defaultLibrary, gasToSend, eventSelector, forkId, logs, enableEstimates);
     }
 
+    /// @notice finds logs with the default packet selector
+    /// @param logs represents the array of logs
+    /// @param length represents the expected number of logs
+    /// @return lzLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory lzLogs) {
         return _findLogs(logs, PACKET_SELECTOR, length);
     }
 
+    /// @notice finds logs with a specific event selector
+    /// @param logs represents the array of logs
+    /// @param eventSelector represents the event selector
+    /// @param length represents the expected number of logs
+    /// @return lzLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, bytes32 eventSelector, uint256 length)
         external
         pure
@@ -113,6 +165,19 @@ contract LayerZeroHelper is Test {
         return _findLogs(logs, eventSelector, length);
     }
 
+    //////////////////////////////////////////////////////////////
+    //                  INTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice internal function to help with destination transfers
+    /// @param endpoint represents the endpoint address
+    /// @param expChainId represents the expected chain id
+    /// @param defaultLibrary represents the default library address
+    /// @param gasToSend represents the gas to send for message execution
+    /// @param eventSelector represents the event selector
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
+    /// @param enableEstimates flag to enable gas estimates
     function _help(
         address endpoint,
         uint16 expChainId,
@@ -146,6 +211,14 @@ contract LayerZeroHelper is Test {
         vm.selectFork(prevForkId);
     }
 
+    /// @notice estimates gas for message execution
+    /// @param endpoint represents the endpoint address
+    /// @param destination represents the destination chain id
+    /// @param userApplication represents the user application address
+    /// @param payload represents the message payload
+    /// @param payInZRO flag to indicate if fees should be paid in ZRO tokens
+    /// @param adapterParam represents the adapter parameters
+    /// @return gasEstimate the estimated gas
     function _estimateGas(
         address endpoint,
         uint16 destination,
@@ -159,6 +232,11 @@ contract LayerZeroHelper is Test {
         return nativeGas;
     }
 
+    /// @notice receives the payload and executes the message
+    /// @param endpoint represents the endpoint address
+    /// @param packet represents the LayerZero packet
+    /// @param gasToSend represents the gas to send for message execution
+    /// @param enableEstimates flag to enable gas estimates
     function _receivePayload(
         address endpoint,
         LayerZeroPacket.Packet memory packet,
@@ -183,6 +261,11 @@ contract LayerZeroHelper is Test {
         }
     }
 
+    /// @notice internal function to find logs with a specific event selector
+    /// @param logs represents the array of logs
+    /// @param eventSelector represents the event selector
+    /// @param length represents the expected number of logs
+    /// @return lzLogs array of found logs
     function _findLogs(Vm.Log[] memory logs, bytes32 eventSelector, uint256 length)
         internal
         pure

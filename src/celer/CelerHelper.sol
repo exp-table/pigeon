@@ -1,25 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// library imports
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 import "solady/src/utils/LibString.sol";
+
+/// local imports
 import {TypeCasts} from "../libraries/TypeCasts.sol";
 
 interface IMessageBus {
-    /**
-     * @notice Send a message to a contract on another chain.
-     * Sender needs to make sure the uniqueness of the message Id, which is computed as
-     * hash(type.MessageOnly, sender, receiver, srcChainId, srcTxHash, dstChainId, message).
-     * If messages with the same Id are sent, only one of them will succeed at dst chain..
-     * A fee is charged in the native gas token.
-     * @param _receiver The address of the destination app contract.
-     * @param _dstChainId The destination chain ID.
-     * @param _message Arbitrary message bytes to be decoded by the destination app contract.
-     */
     function sendMessage(address _receiver, uint256 _dstChainId, bytes calldata _message) external payable;
-
     function calcFee(bytes calldata _message) external view returns (uint256);
 }
 
@@ -28,32 +18,34 @@ interface IMessageReceiverApp {
         Fail, // execution failed, finalized
         Success, // execution succeeded, finalized
         Retry // execution rejected, can retry later
+
     }
 
-    /**
-     * @notice Called by MessageBus to execute a message
-     * @param _sender The address of the source app contract
-     * @param _srcChainId The source chain ID where the transfer is originated from
-     * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address who called the MessageBus execution function
-     */
     function executeMessage(address _sender, uint64 _srcChainId, bytes calldata _message, address _executor)
         external
         payable
         returns (ExecutionStatus);
 }
 
-/// @title Celer IM Cross-Chain Helper
-/// @dev use the `help` and `helpWithEstimates` functions to process any message delivery
-/// @notice will help developers test celer im using forked mainnets (Near mainnet execution)
-/// @notice supports only EVM chains at this moment & single transfers
+/// @title Celer Helper
+/// @notice helps simulate the message transfer using celer im message bridge
 contract CelerHelper is Test {
+    /// @dev is the default event selector if not specified by the user
     bytes32 constant MESSAGE_EVENT_SELECTOR = 0xce3972bfffe49d317e1d128047a97a3d86b25c94f6f04409f988ef854d25e0e4;
 
-    /// @dev to process multi destination payloads
+    //////////////////////////////////////////////////////////////
+    //                  EXTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice helps with multiple destination transfers
+    /// @param fromChainId represents the source chain id
+    /// @param fromMessageBus represents the source message bus address (cannot be fetched from logs)
+    /// @param toMessageBus represents the destination message bus addresses
+    /// @param expDstChainId represents the expected destination chain ids
+    /// @param forkId array of destination fork ids (localized to your testing)
+    /// @param logs array of logs
     function help(
         uint64 fromChainId,
-        /// @dev is inevitable, cannot fetch form logs
         address fromMessageBus,
         address[] memory toMessageBus,
         uint64[] memory expDstChainId,
@@ -74,9 +66,15 @@ contract CelerHelper is Test {
         }
     }
 
+    /// @notice helps with a single destination transfer
+    /// @param fromChainId represents the source chain id
+    /// @param fromMessageBus represents the source message bus address (cannot be fetched from logs)
+    /// @param toMessageBus represents the destination message bus address
+    /// @param expDstChainId represents the expected destination chain id
+    /// @param forkId represents the destination fork id (localized to your testing)
+    /// @param logs array of logs
     function help(
         uint64 fromChainId,
-        /// @dev is inevitable, cannot fetch form logs
         address fromMessageBus,
         address toMessageBus,
         uint64 expDstChainId,
@@ -86,9 +84,16 @@ contract CelerHelper is Test {
         _help(fromChainId, fromMessageBus, toMessageBus, expDstChainId, MESSAGE_EVENT_SELECTOR, forkId, logs, false);
     }
 
+    /// @notice helps with a single destination transfer with a specific event selector
+    /// @param fromChainId represents the source chain id
+    /// @param fromMessageBus represents the source message bus address (cannot be fetched from logs)
+    /// @param toMessageBus represents the destination message bus address
+    /// @param expDstChainId represents the expected destination chain id
+    /// @param eventSelector represents the event selector
+    /// @param forkId represents the destination fork id (localized to your testing)
+    /// @param logs array of logs
     function help(
         uint64 fromChainId,
-        /// @dev is inevitable, cannot fetch form logs
         address fromMessageBus,
         address toMessageBus,
         uint64 expDstChainId,
@@ -99,9 +104,15 @@ contract CelerHelper is Test {
         _help(fromChainId, fromMessageBus, toMessageBus, expDstChainId, eventSelector, forkId, logs, false);
     }
 
+    /// @notice helps with a single destination transfer and estimates gas
+    /// @param fromChainId represents the source chain id
+    /// @param fromMessageBus represents the source message bus address (cannot be fetched from logs)
+    /// @param toMessageBus represents the destination message bus address
+    /// @param expDstChainId represents the expected destination chain id
+    /// @param forkId represents the destination fork id (localized to your testing)
+    /// @param logs array of logs
     function helpWithEstimates(
         uint64 fromChainId,
-        /// @dev is inevitable, cannot fetch form logs
         address fromMessageBus,
         address toMessageBus,
         uint64 expDstChainId,
@@ -121,6 +132,14 @@ contract CelerHelper is Test {
         );
     }
 
+    /// @notice helps with a single destination transfer with a specific event selector and estimates gas
+    /// @param fromChainId represents the source chain id
+    /// @param fromMessageBus represents the source message bus address (cannot be fetched from logs)
+    /// @param toMessageBus represents the destination message bus address
+    /// @param expDstChainId represents the expected destination chain id
+    /// @param forkId represents the destination fork id (localized to your testing)
+    /// @param eventSelector represents the event selector
+    /// @param logs array of logs
     function helpWithEstimates(
         uint64 fromChainId,
         /// @dev is inevitable, cannot fetch form logs
@@ -135,6 +154,13 @@ contract CelerHelper is Test {
         _help(fromChainId, fromMessageBus, toMessageBus, expDstChainId, eventSelector, forkId, logs, enableEstimates);
     }
 
+    /// @notice helps with multiple destination transfers and estimates gas
+    /// @param fromChainId represents the source chain id
+    /// @param fromMessageBus represents the source message bus address (cannot be fetched from logs)
+    /// @param toMessageBus represents the destination message bus addresses
+    /// @param expDstChainId represents the expected destination chain ids
+    /// @param forkId array of destination fork ids (localized to your testing)
+    /// @param logs array of logs
     function helpWithEstimates(
         uint64 fromChainId,
         /// @dev is inevitable, cannot fetch form logs
@@ -159,10 +185,19 @@ contract CelerHelper is Test {
         }
     }
 
+    /// @notice finds logs with the default event selector
+    /// @param logs array of logs
+    /// @param length expected number of logs
+    /// @return HLLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
         return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
     }
 
+    /// @notice finds logs with a specific event selector
+    /// @param logs array of logs
+    /// @param eventSelector event selector
+    /// @param length expected number of logs
+    /// @return HLLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, bytes32 eventSelector, uint256 length)
         external
         pure
@@ -171,6 +206,19 @@ contract CelerHelper is Test {
         return _findLogs(logs, eventSelector, length);
     }
 
+    //////////////////////////////////////////////////////////////
+    //                  INTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice internal function to help with destination transfers
+    /// @param fromChainId represents the source chain id
+    /// @param fromMessageBus represents the source message bus address
+    /// @param toMessageBus represents the destination message bus address
+    /// @param expDstChainId represents the expected destination chain id
+    /// @param eventSelector represents the event selector
+    /// @param forkId represents the destination fork id (localized to your testing)
+    /// @param logs array of logs
+    /// @param enableEstimates flag to enable gas estimates
     function _help(
         uint64 fromChainId,
         address fromMessageBus,
@@ -208,6 +256,11 @@ contract CelerHelper is Test {
         vm.selectFork(prevForkId);
     }
 
+    /// @notice handles the message execution
+    /// @param fromChainId represents the source chain id
+    /// @param sender represents the sender address
+    /// @param data represents the message data
+    /// @param expDstChainId represents the expected destination chain id
     function _handle(uint64 fromChainId, address sender, bytes memory data, uint64 expDstChainId) internal {
         bytes32 receiver;
         uint256 dstChainId;
@@ -226,6 +279,10 @@ contract CelerHelper is Test {
         }
     }
 
+    /// @notice estimates gas for message execution
+    /// @param fromMessageBus represents the source message bus address
+    /// @param message represents the message data
+    /// @return gasEstimate the estimated gas
     function _estimateGas(address fromMessageBus, bytes memory message) internal returns (uint256 gasEstimate) {
         /// NOTE: In celer two fees are involved, but only the 1st one is
         /// estimated here
@@ -234,6 +291,11 @@ contract CelerHelper is Test {
         gasEstimate = IMessageBus(fromMessageBus).calcFee(message);
     }
 
+    /// @notice internal function to find logs with a specific event selector
+    /// @param logs array of logs
+    /// @param dispatchSelector event selector
+    /// @param length expected number of logs
+    /// @return CelerLogs array of found logs
     function _findLogs(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
         internal
         pure

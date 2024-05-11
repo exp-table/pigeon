@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 /// library imports
 import "forge-std/Test.sol";
 
-/// bridge specific imports
+/// local imports
 import "./lib/PayloadDecoder.sol";
 import "./lib/InternalStructs.sol";
 
@@ -23,36 +23,30 @@ interface IWormholeReceiver {
 }
 
 /// @title WormholeHelper
-/// @author Sujith Somraaj
-/// @dev wormhole bridge helper
 /// @notice supports only automatic relayer (not specialized relayers)
 /// MORE INFO: https://docs.wormhole.com/wormhole/quick-start/cross-chain-dev/automatic-relayer
 contract WormholeHelper is Test {
-    /*///////////////////////////////////////////////////////////////
-                                CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev LogMessagePublished (index_topic_1 address sender, uint64 sequence, uint32 nonce, bytes payload, uint8 consistencyLevel)
+    /// @dev is the default event selector if not specified by the user
     bytes32 constant MESSAGE_EVENT_SELECTOR = 0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2;
 
-    /*///////////////////////////////////////////////////////////////
-                             EXTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////
+    //                  EXTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
 
     /// @dev single dst x default event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
-    /// @param dstRelayer is wormhole's dst chain relayer
-    /// @param logs is the logs after message dispatch on src chain
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param dstRelayer represents wormhole's dst chain relayer
+    /// @param logs represents the logs after message dispatch on src chain
     function help(uint16 srcChainId, uint256 dstForkId, address dstRelayer, Vm.Log[] calldata logs) external {
         _help(srcChainId, dstForkId, address(0), dstRelayer, MESSAGE_EVENT_SELECTOR, logs);
     }
 
     /// @dev single dst x user-specific event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
-    /// @param dstRelayer is wormhole's dst chain relayer
-    /// @param logs is the logs after message dispatch on src chain
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param dstRelayer represents wormhole's dst chain relayer
+    /// @param logs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256 dstForkId,
@@ -64,10 +58,10 @@ contract WormholeHelper is Test {
     }
 
     /// @dev multi dst x default event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
-    /// @param dstRelayer is wormhole's dst chain relayer
-    /// @param logs is the logs after message dispatch on src chain
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param dstRelayer represents wormhole's dst chain relayer
+    /// @param logs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256[] calldata dstForkId,
@@ -85,10 +79,10 @@ contract WormholeHelper is Test {
     }
 
     /// @dev multi dst x user-specific event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
-    /// @param dstRelayer is wormhole's dst chain relayer
-    /// @param logs is the logs after message dispatch on src chain
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param dstRelayer represents wormhole's dst chain relayer
+    /// @param logs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256[] calldata dstForkId,
@@ -107,13 +101,16 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helps find logs of `length` for default event selector
+    /// @param logs represents the logs after message dispatch on src chain
+    /// @param length represents the expected number of logs
+    /// @return HLLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
         return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
     }
 
-    /*///////////////////////////////////////////////////////////////
-                        INTERNAL/HELPER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////
+    //                  INTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
 
     struct LocalVars {
         uint256 prevForkId;
@@ -124,6 +121,12 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helper to process cross-chain messages
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param expDstAddress represents the expected destination address
+    /// @param dstRelayer represents wormhole's dst chain relayer
+    /// @param eventSelector represents the event selector
+    /// @param logs represents the logs after message dispatch on src chain
     function _help(
         uint16 srcChainId,
         uint256 dstForkId,
@@ -166,6 +169,10 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helper to get logs
+    /// @param logs represents the logs after message dispatch on src chain
+    /// @param dispatchSelector represents the event selector
+    /// @param length represents the expected number of logs
+    /// @return WormholeLogs array of found logs
     function _findLogs(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
         internal
         pure

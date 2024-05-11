@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// library imports
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
@@ -30,14 +31,21 @@ interface ILayerzeroV2Receiver {
     ) external payable;
 }
 
+/// @title LayerZero V2 Helper
+/// @notice helps simulate message transfers using the LayerZero v2 protocol
 contract LayerZeroV2Helper is Test {
+    /// @dev is the default packet selector if not specified by the user
     bytes32 constant PACKET_SELECTOR = 0x1ab700d4ced0c005b164c0f789fd09fcbb0156d4c2041b8a3bfbcd961cd1567f;
 
-    /// help process multiple destination packets in one atomic transaction
-    /// @param endpoints is the layerzero endpoints on the destination chain
-    /// @param expChainIds is the layerzero destination chain eids
-    /// @param forkIds is the layerzero destination chain fork ids
-    /// @param logs is the recorded message logs
+    //////////////////////////////////////////////////////////////
+    //                  EXTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice helps process multiple destination packets in one atomic transaction
+    /// @param endpoints represents the layerzero endpoints on the destination chain
+    /// @param expChainIds represents the layerzero destination chain eids
+    /// @param forkIds represents the layerzero destina
+    /// @param logs represents the recorded message logs
     function help(
         address[] memory endpoints,
         uint32[] memory expChainIds,
@@ -49,12 +57,12 @@ contract LayerZeroV2Helper is Test {
         }
     }
 
-    /// help process multiple destination packets in one atomic transaction
-    /// @param endpoints is the layerzero endpoints on the destination chain
-    /// @param expChainIds is the layerzero destination chain eids
-    /// @param forkIds is the layerzero destination chain fork ids
-    /// @param eventSelector is a custom event selector
-    /// @param logs is the recorded message logs
+    /// @notice helps process multiple destination packets in one atomic transaction
+    /// @param endpoints represents the layerzero endpoints on the destination chain
+    /// @param expChainIds represents the layerzero destination chain eids
+    /// @param forkIds represents the layerzero destination chain fork ids
+    /// @param eventSelector represents a custom event selector
+    /// @param logs represents the recorded message logs
     function help(
         address[] memory endpoints,
         uint32[] memory expChainIds,
@@ -67,24 +75,29 @@ contract LayerZeroV2Helper is Test {
         }
     }
 
-    /// @notice help process LayerZero v2 packets
-    /// @param endpoint is the layerzero endpoint on the destination chain
-    /// @param forkId is the destination chain fork id
-    /// @param logs is the recorded message logs
+    /// @notice helps process LayerZero v2 packets
+    /// @param endpoint represents the layerzero endpoint on the destination chain
+    /// @param forkId represents the destination chain fork id
+    /// @param logs represents the recorded message logs
     function help(address endpoint, uint256 forkId, Vm.Log[] calldata logs) external {
         _help(endpoint, 0, forkId, PACKET_SELECTOR, logs);
     }
 
-    /// @notice help process LayerZero v2 packets
-    /// @param endpoint is the layerzero endpoint on the destination chain
-    /// @param forkId is the destination chain fork id
-    /// @param eventSelector is custom bytes32 event selector
-    /// @param logs is the recorded message logs
+    /// @notice helps process LayerZero v2 packets
+    /// @param endpoint represents the layerzero endpoint on the destination chain
+    /// @param forkId represents the destination chain fork id
+    /// @param eventSelector represents a custom bytes32 event selector
+    /// @param logs represents the recorded message logs
     function help(address endpoint, uint256 forkId, bytes32 eventSelector, Vm.Log[] calldata logs) external {
         _help(endpoint, 0, forkId, eventSelector, logs);
     }
 
     /// @notice internal function to process LayerZero v2 packets based on the provided logs and fork ID
+    /// @param endpoint represents the layerzero endpoint on the destination chain
+    /// @param expDstChainId represents the expected destination chain id
+    /// @param forkId represents the destination chain fork id
+    /// @param eventSelector represents the event selector
+    /// @param logs represents the recorded message logs
     function _help(address endpoint, uint32 expDstChainId, uint256 forkId, bytes32 eventSelector, Vm.Log[] memory logs)
         internal
     {
@@ -115,6 +128,8 @@ contract LayerZeroV2Helper is Test {
     }
 
     /// @notice helps decode the layerzero encoded payload / packet
+    /// @param encodedPacket represents the encoded packet
+    /// @return the decoded packet
     function decodePacket(bytes calldata encodedPacket) public pure returns (Packet memory) {
         /// @dev decode the packet header
         uint8 version = uint8(encodedPacket[0]);
@@ -139,25 +154,41 @@ contract LayerZeroV2Helper is Test {
         });
     }
 
+    //////////////////////////////////////////////////////////////
+    //                  INTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
     /// @notice helper function to convert bytes to uint64
+    /// @param data represents the bytes data
+    /// @param offset represents the offset within the data
+    /// @return the uint64 value
     function toUint64(bytes calldata data, uint256 offset) internal pure returns (uint64) {
         require(offset + 8 <= data.length, "toUint64: out of bounds");
         return uint64(bytes8(data[offset:offset + 8]));
     }
 
     /// @notice helper function to convert bytes to uint32
+    /// @param data represents the bytes data
+    /// @param offset represents the offset within the data
+    /// @return the uint32 value
     function toUint32(bytes calldata data, uint256 offset) internal pure returns (uint32) {
         require(offset + 4 <= data.length, "toUint32: out of bounds");
         return uint32(bytes4(data[offset:offset + 4]));
     }
 
     /// @notice helper function to convert bytes to address
+    /// @param data represents the bytes data
+    /// @param offset represents the offset within the data
+    /// @return the address value
     function toAddress(bytes calldata data, uint256 offset) internal pure returns (address) {
         require(offset + 20 <= data.length, "toAddress: out of bounds");
         return address(uint160(bytes20(data[offset + 12:offset + 32])));
     }
 
-    ///  @notice helper function to convert bytes to bytes32
+    /// @notice helper function to convert bytes to bytes32
+    /// @param data represents the bytes data
+    /// @param offset represents the offset within the data
+    /// @return the bytes32 value
     function toBytes32(bytes calldata data, uint256 offset) internal pure returns (bytes32) {
         require(offset + 32 <= data.length, "toBytes32: out of bounds");
         return bytes32(data[offset:offset + 32]);

@@ -13,29 +13,24 @@ interface IWormholeReceiver {
 }
 
 /// @title WormholeHelper
-/// @author Sujith Somraaj
 /// @dev wormhole helper that uses VAA to deliver messages
 /// @notice supports specialized relayers (for automatic relayer use WormholeHelper)
 /// @notice in real-world scenario the off-chain infra will just sign the VAAs but this helpers mocks both signing and relaying
 /// MORE INFO: https://docs.wormhole.com/wormhole/quick-start/cross-chain-dev/specialized-relayer
 contract WormholeHelper is Test {
-    /*///////////////////////////////////////////////////////////////
-                                CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev LogMessagePublished (index_topic_1 address sender, uint64 sequence, uint32 nonce, bytes payload, uint8 consistencyLevel)
+    /// @dev is the default event selector if not specified by the user
     bytes32 constant MESSAGE_EVENT_SELECTOR = 0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2;
 
-    /*///////////////////////////////////////////////////////////////
-                            EXTERNAL FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////
+    //                  EXTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
 
     /// @dev single dst x default event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
-    /// @param dstWormhole is the wormhole core contract on dst chain
-    /// @param dstTarget is the final receiver of the message
-    /// @param srcLogs is the logs after message dispatch on src chain
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param dstWormhole represents the wormhole core contract on dst chain
+    /// @param dstTarget represents the final receiver of the message
+    /// @param srcLogs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256 dstForkId,
@@ -47,6 +42,12 @@ contract WormholeHelper is Test {
     }
 
     /// @dev single dst x user-specified event selector
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param dstWormhole represents the wormhole core contract on dst chain
+    /// @param dstTarget represents the final receiver of the message
+    /// @param msgEventSelector represents the user-specified event selector
+    /// @param srcLogs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256 dstForkId,
@@ -59,6 +60,11 @@ contract WormholeHelper is Test {
     }
 
     /// @dev multi dst x default event selector
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the array of dst fork ids to deliver the message
+    /// @param dstWormhole represents the array of wormhole core contracts on dst chains
+    /// @param dstTarget represents the array of final receivers of the message
+    /// @param srcLogs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256[] memory dstForkId,
@@ -76,6 +82,12 @@ contract WormholeHelper is Test {
     }
 
     /// @dev multi dst x user-specified event selector
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the array of dst fork ids to deliver the message
+    /// @param dstWormhole represents the array of wormhole core contracts on dst chains
+    /// @param dstTarget represents the array of final receivers of the message
+    /// @param msgEventSelector represents the user-specified event selector
+    /// @param srcLogs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256[] memory dstForkId,
@@ -94,13 +106,16 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helps find logs of `length` for default event selector
+    /// @param logs represents the logs after message dispatch on src chain
+    /// @param length represents the expected number of logs
+    /// @return HLLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
         return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
     }
 
-    /*///////////////////////////////////////////////////////////////
-                        INTERNAL HELPER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////
+    //                  INTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
 
     struct LocalVars {
         uint256 prevForkId;
@@ -111,6 +126,13 @@ contract WormholeHelper is Test {
         address dstAddress;
     }
 
+    /// @dev internal function to help with message delivery
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param dstWormhole represents the wormhole core contract on dst chain
+    /// @param dstTarget represents the final receiver of the message
+    /// @param eventSelector represents the event selector
+    /// @param srcLogs represents the logs after message dispatch on src chain
     function _help(
         uint16 srcChainId,
         uint256 dstForkId,
@@ -155,6 +177,7 @@ contract WormholeHelper is Test {
 
     /// @dev overrides the guardian set by choosing slot
     /// @notice overrides the current guardian set with a set of known guardian set
+    /// @param dstWormhole represents the wormhole core contract on dst chain
     function _prepareWormhole(address dstWormhole) internal {
         IWormhole wormhole = IWormhole(dstWormhole);
 
@@ -174,6 +197,14 @@ contract WormholeHelper is Test {
     }
 
     /// @dev generates the encoded vaa
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param nonce represents the nonce of the message
+    /// @param emitterAddress represents the emitter address
+    /// @param sequence represents the sequence of the message
+    /// @param consistencyLevel represents the consistency level
+    /// @param payload represents the message payload
+    /// @param dstWormhole represents the wormhole core contract on dst chain
+    /// @return encodedVAA the encoded VAA
     function _generateVAA(
         uint16 srcChainId,
         uint32 nonce,
@@ -235,6 +266,10 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helper to get logs
+    /// @param logs represents the logs after message dispatch on src chain
+    /// @param dispatchSelector represents the event selector
+    /// @param length represents the expected number of logs
+    /// @return WormholeLogs array of found logs
     function _findLogs(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
         internal
         pure

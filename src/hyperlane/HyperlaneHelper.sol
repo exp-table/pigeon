@@ -1,18 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+/// library imports
 import "forge-std/Test.sol";
 import "solady/src/utils/LibString.sol";
 
+/// local imports
 import {TypeCasts} from "../libraries/TypeCasts.sol";
 
 interface IMessageRecipient {
     function handle(uint32 _origin, bytes32 _sender, bytes calldata _message) external;
 }
 
+/// @title Hyperlane Helper
+/// @notice Helps simulate message transfers using the Hyperlane interchain messaging protocol
 contract HyperlaneHelper is Test {
+    /// @dev The default dispatch selector if not specified by the user
     bytes32 constant DISPATCH_SELECTOR = 0x769f711d20c679153d382254f59892613b58a97cc876b249134ac25c80f9c814;
 
+    //////////////////////////////////////////////////////////////
+    //                  EXTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice helps with multiple destination transfers
+    /// @param fromMailbox represents the source mailbox address
+    /// @param toMailbox represents the array of destination mailbox addresses
+    /// @param expDstDomains represents the array of expected destination domains
+    /// @param forkId represents the array of destination fork IDs (localized to your testing)
+    /// @param logs represents the array of logs
     function help(
         address fromMailbox,
         address[] memory toMailbox,
@@ -26,10 +41,21 @@ contract HyperlaneHelper is Test {
         }
     }
 
+    /// @notice helps with a single destination transfer
+    /// @param fromMailbox represents the source mailbox address
+    /// @param toMailbox represents the destination mailbox address
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
     function help(address fromMailbox, address toMailbox, uint256 forkId, Vm.Log[] calldata logs) external {
         return _help(fromMailbox, toMailbox, 0, DISPATCH_SELECTOR, forkId, logs, false);
     }
 
+    /// @notice helps with a single destination transfer with a specific dispatch selector
+    /// @param fromMailbox represents the source mailbox address
+    /// @param toMailbox represents the destination mailbox address
+    /// @param dispatchSelector represents the dispatch selector
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
     function help(
         address fromMailbox,
         address toMailbox,
@@ -40,6 +66,12 @@ contract HyperlaneHelper is Test {
         _help(fromMailbox, toMailbox, 0, dispatchSelector, forkId, logs, false);
     }
 
+    /// @notice helps with multiple destination transfers and estimates gas
+    /// @param fromMailbox represents the source mailbox address
+    /// @param toMailbox represents the array of destination mailbox addresses
+    /// @param expDstDomains represents the array of expected destination domains
+    /// @param forkId represents the array of destination fork IDs (localized to your testing)
+    /// @param logs represents the array of logs
     function helpWithEstimates(
         address fromMailbox,
         address[] memory toMailbox,
@@ -54,6 +86,11 @@ contract HyperlaneHelper is Test {
         }
     }
 
+    /// @notice helps with a single destination transfer and estimates gas
+    /// @param fromMailbox represents the source mailbox address
+    /// @param toMailbox represents the destination mailbox address
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
     function helpWithEstimates(address fromMailbox, address toMailbox, uint256 forkId, Vm.Log[] calldata logs)
         external
     {
@@ -61,6 +98,12 @@ contract HyperlaneHelper is Test {
         _help(fromMailbox, toMailbox, 0, DISPATCH_SELECTOR, forkId, logs, enableEstimates);
     }
 
+    /// @notice helps with a single destination transfer with a specific dispatch selector and estimates gas
+    /// @param fromMailbox represents the source mailbox address
+    /// @param toMailbox represents the destination mailbox address
+    /// @param dispatchSelector represents the dispatch selector
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
     function helpWithEstimates(
         address fromMailbox,
         address toMailbox,
@@ -72,10 +115,19 @@ contract HyperlaneHelper is Test {
         _help(fromMailbox, toMailbox, 0, dispatchSelector, forkId, logs, enableEstimates);
     }
 
+    /// @notice finds logs with the default dispatch selector
+    /// @param logs represents the array of logs
+    /// @param length represents the expected number of logs
+    /// @return HLLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
         return _findLogs(logs, DISPATCH_SELECTOR, length);
     }
 
+    /// @notice finds logs with a specific dispatch selector
+    /// @param logs represents the array of logs
+    /// @param dispatchSelector represents the dispatch selector
+    /// @param length represents the expected number of logs
+    /// @return HLLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, bytes32 dispatchSelector, uint256 length)
         external
         pure
@@ -84,6 +136,18 @@ contract HyperlaneHelper is Test {
         return _findLogs(logs, dispatchSelector, length);
     }
 
+    //////////////////////////////////////////////////////////////
+    //                  INTERNAL FUNCTIONS                      //
+    //////////////////////////////////////////////////////////////
+
+    /// @notice internal function to help with destination transfers
+    /// @param fromMailbox represents the source mailbox address
+    /// @param toMailbox represents the destination mailbox address
+    /// @param expDstDomain represents the expected destination domain
+    /// @param dispatchSelector represents the dispatch selector
+    /// @param forkId represents the destination fork ID (localized to your testing)
+    /// @param logs represents the array of logs
+    /// @param enableEstimates flag to enable gas estimates
     function _help(
         address fromMailbox,
         address toMailbox,
@@ -111,6 +175,11 @@ contract HyperlaneHelper is Test {
         vm.selectFork(prevForkId);
     }
 
+    /// @notice estimates gas for message handling
+    /// @param originDomain represents the origin domain
+    /// @param destinationDomain represents the destination domain
+    /// @param handleGas represents the gas used for message handling
+    /// @return gasEstimate the estimated gas
     function _estimateGas(uint32 originDomain, uint32 destinationDomain, uint256 handleGas)
         internal
         returns (uint256 gasEstimate)
@@ -132,6 +201,10 @@ contract HyperlaneHelper is Test {
         gasEstimate = abi.decode(result, (uint256));
     }
 
+    /// @notice handles the message
+    /// @param message represents the message data
+    /// @param destinationDomain represents the destination domain
+    /// @param enableEstimates flag to enable gas estimates
     function _handle(bytes memory message, uint32 destinationDomain, bool enableEstimates) internal {
         bytes32 _recipient;
         uint256 _originDomain;
@@ -156,6 +229,11 @@ contract HyperlaneHelper is Test {
         }
     }
 
+    /// @notice internal function to find logs with a specific dispatch selector
+    /// @param logs represents the array of logs
+    /// @param dispatchSelector represents the dispatch selector
+    /// @param length represents the expected number of logs
+    /// @return HLLogs array of found logs
     function _findLogs(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
         internal
         pure
