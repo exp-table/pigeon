@@ -8,8 +8,10 @@
 - Helps run cross-chain unit tests on forked mainnet.
 - Simulate the off-chain infrastructure of AMBs.
 
+The library is designed to work with the Foundry testing framework and can be used to streamline the testing process for applications that rely on cross-chain communication.
+
 ## Why Pigeon?
-Arbitrary Message Bridges (AMB) like LayerZero, Hyperlane, Connext, Wormhole, etc., operate alongside multiple off-chain actors. Hence mocking their entire infrastructure during unit testing is tricky for cross-chain application developers. 
+Arbitrary Message Bridges (AMB) like LayerZero, Axelar, Hyperlane, Celer IM, Wormhole, etc., operate alongside multiple off-chain actors. Hence mocking their entire infrastructure during unit testing is tricky for cross-chain application developers. 
 
 Thanks to Pigeon, which will simplify the life of cross-chain application developers by simulating the off-chain infrastructure of such AMBs, helping developers write unit testing across multiple forked networks seamlessly.
 
@@ -17,10 +19,11 @@ By doing near mainnet testing, developers can quickly check sender authenticatio
 
 ### Supported Bridges
 
-| bridge | messaging | gas estimation |
+| Bridge | Messaging | Gas Estimation |
 | --------- | :----------: | :---------: |
 | Hyperlane |      ✅      | ✅  |
 | LayerZero |      ✅      | ✅  |
+| LayerZero V2 |      ✅      | ✅  |
 | Celer     |      ✅      |   |
 | Axelar    |      ✅      |   |
 | Wormhole    |      ✅      |   |
@@ -96,6 +99,8 @@ $  npm run compile
 ```
 
 **Step 4:** Create a PR to the `main` branch. Clearly specify your changes in the PR description with a suitable title. Please make sure to double-check if the tests are passing.
+
+If you have any further questions or need assistance, please don't hesitate to reach out by opening an issue on the GitHub repository.
 
 ### Notable Mentions
 
