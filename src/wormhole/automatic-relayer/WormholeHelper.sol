@@ -25,8 +25,6 @@ interface IWormholeReceiver {
 }
 
 /// @title WormholeHelper
-/// @author Sujith Somraaj
-/// @dev wormhole bridge helper
 /// @notice supports only automatic relayer (not specialized relayers)
 /// MORE INFO: https://docs.wormhole.com/wormhole/quick-start/cross-chain-dev/automatic-relayer
 contract WormholeHelper is Test {
@@ -47,19 +45,19 @@ contract WormholeHelper is Test {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev single dst x default event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
     /// @param dstRelayer is wormhole's dst chain relayer
-    /// @param logs is the logs after message dispatch on src chain
+    /// @param logs represents the logs after message dispatch on src chain
     function help(uint16 srcChainId, uint256 dstForkId, address dstRelayer, Vm.Log[] calldata logs) external {
         _help(srcChainId, dstForkId, address(0), dstRelayer, MESSAGE_EVENT_SELECTOR, logs);
     }
 
     /// @dev single dst x user-specific event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
     /// @param dstRelayer is wormhole's dst chain relayer
-    /// @param logs is the logs after message dispatch on src chain
+    /// @param logs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256 dstForkId,
@@ -71,10 +69,10 @@ contract WormholeHelper is Test {
     }
 
     /// @dev multi dst x default event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
     /// @param dstRelayer is wormhole's dst chain relayer
-    /// @param logs is the logs after message dispatch on src chain
+    /// @param logs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256[] calldata dstForkId,
@@ -92,10 +90,10 @@ contract WormholeHelper is Test {
     }
 
     /// @dev multi dst x user-specific event selector
-    /// @param srcChainId is the wormhole identifier of the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
     /// @param dstRelayer is wormhole's dst chain relayer
-    /// @param logs is the logs after message dispatch on src chain
+    /// @param logs represents the logs after message dispatch on src chain
     function help(
         uint16 srcChainId,
         uint256[] calldata dstForkId,
@@ -114,12 +112,12 @@ contract WormholeHelper is Test {
     }
 
     /// @dev multi dst with additionalVAAs (use this for single dst as well)
-    /// @param srcChainId is the wormhole identifier for the source chain
-    /// @param dstForkId is the dst fork id to deliver the message
-    /// @param expDstAddress is the expected dst chain receiver
-    /// @param dstRelayer is the wormhole dst relayer address
-    /// @param dstWormhole is the wormhole dst core address
-    /// @param logs is the logs after message dispatch with additional VAAs
+    /// @param srcChainId represents the wormhole identifier for the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param expDstAddress represents the expected dst chain receiver
+    /// @param dstRelayer represents the wormhole dst relayer address
+    /// @param dstWormhole represents the wormhole dst core address
+    /// @param logs represents the logs after message dispatch with additional VAAs
     /// @notice considers the expectedDst to be unique in the logs (i.e., only supports one log for expectedDst per chain)
     function helpWithAdditionalVAA(
         uint16 srcChainId,
@@ -304,10 +302,10 @@ contract WormholeHelper is Test {
     }
 
     /// @dev prepares a valid VAA in the wormhole core by overriding the guardian set
-    /// @param srcChainId is the source chain
-    /// @param dstWormhole is the wormhole core on dst chain
-    /// @param emitter is the wormhole core on source chain
-    /// @param logData is the data emitted in the log
+    /// @param srcChainId represents the source chain
+    /// @param dstWormhole represents the wormhole core on dst chain
+    /// @param emitter represents the wormhole core on source chain
+    /// @param logData represents the data emitted in the log
     function _generateSignedVAA(uint16 srcChainId, address dstWormhole, bytes32 emitter, bytes memory logData)
         internal
         returns (bytes memory)
