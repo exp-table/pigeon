@@ -28,7 +28,7 @@ interface IWormholeReceiver {
 /// @notice supports only automatic relayer (not specialized relayers)
 /// MORE INFO: https://docs.wormhole.com/wormhole/quick-start/cross-chain-dev/automatic-relayer
 contract WormholeHelper is Test {
-    /// @dev LogMessagePublished (index_topic_1 address sender, uint64 sequence, uint32 nonce, bytes payload, uint8 consistencyLevel)
+    /// @dev is the default event selector if not specified by the user
     bytes32 constant MESSAGE_EVENT_SELECTOR = 0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2;
 
     uint256[] public indicesCache;
