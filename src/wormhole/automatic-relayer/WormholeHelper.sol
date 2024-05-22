@@ -131,6 +131,9 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helps find logs of `length` for default event selector
+    /// @param logs represents the logs after message dispatch on src chain
+    /// @param length represents the expected number of logs
+    /// @return HLLogs array of found logs
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory HLLogs) {
         return _findLogs(logs, MESSAGE_EVENT_SELECTOR, length);
     }
