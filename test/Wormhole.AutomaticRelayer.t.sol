@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 
 /// local imports
 import "src/wormhole/automatic-relayer/WormholeHelper.sol";
+import "src/wormhole/specialized-relayer/lib/IWormhole.sol";
 
 interface IWormholeRelayerSend {
     function sendPayloadToEvm(
@@ -24,6 +25,15 @@ interface IWormholeRelayerSend {
         uint256 gasLimit,
         uint16 refundChain,
         address refundAddress
+    ) external payable returns (uint64 sequence);
+
+    function sendVaasToEvm(
+        uint16 targetChain,
+        address targetAddress,
+        bytes memory payload,
+        uint256 receiverValue,
+        uint256 gasLimit,
+        VaaKey[] memory vaaKeys
     ) external payable returns (uint64 sequence);
 
     function quoteEVMDeliveryPrice(uint16 targetChain, uint256 receiverValue, uint256 gasLimit)
@@ -45,6 +55,22 @@ contract Target is IWormholeReceiver {
         bytes32 deliveryHash
     ) external payable {
         value = abi.decode(payload, (uint256));
+    }
+}
+
+contract AdditionalVAATarget is IWormholeReceiver {
+    uint256 public value;
+    uint256 public vaalen;
+
+    function receiveWormholeMessages(
+        bytes memory payload,
+        bytes[] memory additionalVaas,
+        bytes32 sourceAddress,
+        uint16 sourceChain,
+        bytes32 deliveryHash
+    ) external payable {
+        value = abi.decode(payload, (uint256));
+        vaalen = additionalVaas.length;
     }
 }
 
@@ -72,11 +98,13 @@ contract AnotherTarget {
 }
 
 contract WormholeAutomaticRelayerHelperTest is Test {
+    IWormhole wormhole = IWormhole(0x98f3c9e6E3fAce36bAAd05FE09d375Ef1464288B);
     WormholeHelper wormholeHelper;
     Target target;
     Target altTarget;
 
     AnotherTarget anotherTarget;
+    AdditionalVAATarget addVaaTarget;
 
     uint256 L1_FORK_ID;
     uint256 POLYGON_FORK_ID;
@@ -109,6 +137,7 @@ contract WormholeAutomaticRelayerHelperTest is Test {
 
         POLYGON_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET);
         target = new Target();
+        addVaaTarget = new AdditionalVAATarget();
         anotherTarget = new AnotherTarget(L1_CHAIN_ID);
 
         ARBITRUM_FORK_ID = vm.createSelectFork(RPC_ARBITRUM_MAINNET, 38063686);
@@ -199,6 +228,49 @@ contract WormholeAutomaticRelayerHelperTest is Test {
 
         vm.selectFork(ARBITRUM_FORK_ID);
         assertEq(altTarget.value(), CROSS_CHAIN_MESSAGE);
+    }
+
+    /// @dev test multi-dst wormhole helper with additional VAAs
+    function testMultiDstWormholeWithAdditionalVAA() external {
+        vm.selectFork(L1_FORK_ID);
+        vm.recordLogs();
+
+        _aMostFancyCrossChainFunctionInYourContract(L2_1_CHAIN_ID, address(addVaaTarget));
+
+        uint256[] memory dstForkId = new uint256[](1);
+        dstForkId[0] = POLYGON_FORK_ID;
+
+        address[] memory dstAddress = new address[](1);
+        dstAddress[0] = address(addVaaTarget);
+
+        address[] memory dstRelayers = new address[](1);
+        dstRelayers[0] = L2_1_RELAYER;
+
+        address[] memory dstWormhole = new address[](1);
+        dstWormhole[0] = 0x7A4B5a56256163F07b2C80A7cA55aBE66c4ec4d7;
+
+        wormholeHelper.helpWithAdditionalVAA(
+            L1_CHAIN_ID, dstForkId, dstAddress, dstRelayers, dstWormhole, vm.getRecordedLogs()
+        );
+
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(addVaaTarget.value(), CROSS_CHAIN_MESSAGE);
+        assertEq(addVaaTarget.vaalen(), 1);
+    }
+
+    function _aMostFancyCrossChainFunctionInYourContract(uint16 dstChainId, address receiver) internal {
+        IWormholeRelayer relayer = IWormholeRelayer(L1_RELAYER);
+
+        (uint256 msgValue,) = relayer.quoteEVMDeliveryPrice(dstChainId, 0, 500000);
+
+        uint64 sequence = wormhole.publishMessage{value: wormhole.messageFee()}(0, abi.encode(CROSS_CHAIN_MESSAGE), 0);
+
+        VaaKey[] memory vaaKeys = new VaaKey[](1);
+        vaaKeys[0] = VaaKey(L1_CHAIN_ID, TypeCasts.addressToBytes32(address(this)), sequence);
+
+        relayer.sendVaasToEvm{value: msgValue}(
+            dstChainId, receiver, abi.encode(CROSS_CHAIN_MESSAGE), 0, 500000, vaaKeys
+        );
     }
 
     function _aMoreFancyCrossChainFunctionInYourContract(uint16 dstChainId, address receiver) internal {
