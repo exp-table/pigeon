@@ -290,6 +290,10 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helper to get logs
+    /// @param logs represents the logs after message dispatch on src chain
+    /// @param dispatchSelector represents the event selector
+    /// @param length represents the expected number of logs
+    /// @return WormholeLogs array of found logs
     function _findLogs(Vm.Log[] memory logs, bytes32 dispatchSelector, uint256 length)
         internal
         pure
