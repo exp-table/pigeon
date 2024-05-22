@@ -10,6 +10,7 @@ import {TypeCasts} from "../../libraries/TypeCasts.sol";
 
 interface IWormholeReceiver {
     function receiveMessage(bytes memory encodedMessage) external;
+    function createWrapped(bytes memory encodedVm) external returns (address token);
 }
 
 /// @title WormholeHelper
@@ -168,7 +169,11 @@ contract WormholeHelper is Test {
                 );
 
                 /// @dev delivers the message by passing the new guardian set to receiver
-                IWormholeReceiver(dstTarget).receiveMessage(encodedVAA);
+                try IWormholeReceiver(dstTarget).receiveMessage(encodedVAA) {}
+                catch {
+                    /// TODO: implement enum for delivery types to support nft and token bridges
+                    IWormholeReceiver(dstTarget).createWrapped(encodedVAA);
+                }
             }
         }
 
