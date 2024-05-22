@@ -161,6 +161,12 @@ contract WormholeHelper is Test {
     }
 
     /// @dev helper to process cross-chain messages
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param expDstAddress represents the expected destination address
+    /// @param dstRelayer represents wormhole's dst chain relayer
+    /// @param eventSelector represents the event selector
+    /// @param logs represents the logs after message dispatch on src chain
     function _help(
         uint16 srcChainId,
         uint256 dstForkId,
@@ -202,6 +208,14 @@ contract WormholeHelper is Test {
         vm.selectFork(v.prevForkId);
     }
 
+    /// @dev helper to process cross-chain messages with additional VAAs
+    /// @param srcChainId represents the wormhole identifier of the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param expDstAddress represents the expected destination address
+    /// @param dstRelayer represents wormhole's dst chain relayer
+    /// @param dstWormhole represents wormhole core on dst chain
+    /// @param eventSelector represents the event selector
+    /// @param logs represents the logs after message dispatch on src chain
     function _helpWithAddtionalVAAs(
         uint16 srcChainId,
         uint256 dstForkId,
