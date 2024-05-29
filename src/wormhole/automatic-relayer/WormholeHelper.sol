@@ -31,8 +31,6 @@ contract WormholeHelper is Test {
     /// @dev is the default event selector if not specified by the user
     bytes32 constant MESSAGE_EVENT_SELECTOR = 0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2;
 
-    uint256[] public indicesCache;
-
     //////////////////////////////////////////////////////////////
     //                  EXTERNAL FUNCTIONS                      //
     //////////////////////////////////////////////////////////////
@@ -151,6 +149,9 @@ contract WormholeHelper is Test {
         bytes[] additionalVAAs;
         uint256 currIndex;
         uint256 deliveryIndex;
+        uint256 currLen;
+        uint256 totalLen;
+        uint256[] indicesCache;
         DeliveryInstruction instruction;
     }
 
@@ -237,33 +238,44 @@ contract WormholeHelper is Test {
         Vm.Log memory log;
         console.log("Total Log Length:", logs.length);
 
+        /// @dev calculates the valid indices length
+        for (uint256 i; i < logs.length; i++) {
+            log = logs[i];
+            if (log.topics[0] == eventSelector) v.totalLen++;
+        }
+
+        v.indicesCache = new uint256[](v.totalLen);
+
         /// @dev calculates the valid indices
         for (uint256 i; i < logs.length; i++) {
             log = logs[i];
-            if (log.topics[0] == eventSelector) indicesCache.push(i);
+            if (log.topics[0] == eventSelector) {
+                v.indicesCache[v.currLen] = i;
+                v.currLen++;
+            }
         }
 
         /// @dev if valid indices > 1, then it has additional VAAs to be delivered
         /// @dev constructs the additional VAAs in that case
-        v.additionalVAAs = new bytes[](indicesCache.length - 1);
+        v.additionalVAAs = new bytes[](v.indicesCache.length - 1);
         v.currIndex;
 
-        console.log("Total matching VAAs:", indicesCache.length);
+        console.log("Total matching VAAs:", v.indicesCache.length);
 
-        if (indicesCache.length > 1 && expDstAddress != address(0)) {
-            for (uint256 j; j < indicesCache.length; j++) {
-                log = logs[indicesCache[j]];
+        if (v.indicesCache.length > 1 && expDstAddress != address(0)) {
+            for (uint256 j; j < v.indicesCache.length; j++) {
+                log = logs[v.indicesCache[j]];
 
                 if (TypeCasts.bytes32ToAddress(log.topics[1]) != dstRelayer) {
                     v.additionalVAAs[v.currIndex] = _generateSignedVAA(srcChainId, dstWormhole, log.topics[1], log.data);
                     v.currIndex++;
                 } else {
-                    v.deliveryIndex = indicesCache[j];
+                    v.deliveryIndex = v.indicesCache[j];
                 }
             }
         }
 
-        log = logs[v.currIndex == 0 ? indicesCache[0] : v.deliveryIndex];
+        log = logs[v.currIndex == 0 ? v.indicesCache[0] : v.deliveryIndex];
 
         (v.sequence, v.nonce, v.payload,) = abi.decode(log.data, (uint64, uint32, bytes, uint8));
 
@@ -281,9 +293,6 @@ contract WormholeHelper is Test {
                 keccak256(abi.encodePacked(v.sequence, v.nonce))
             );
         }
-
-        /// @dev reset indices cache
-        delete indicesCache;
 
         vm.stopBroadcast();
         vm.selectFork(v.prevForkId);
