@@ -24,12 +24,20 @@ interface IWormholeReceiver {
     ) external payable;
 }
 
+interface IMessageTransmitter {
+    function attesterManager() external view returns (address);
+    function enableAttester(address newAttester) external;
+    function setSignatureThreshold(uint256 newSignatureThreshold) external;
+    function receiveMessage(bytes calldata message, bytes calldata attestation) external;
+}
+
 /// @title WormholeHelper
 /// @notice supports only automatic relayer (not specialized relayers)
 /// MORE INFO: https://docs.wormhole.com/wormhole/quick-start/cross-chain-dev/automatic-relayer
 contract WormholeHelper is Test {
     /// @dev is the default event selector if not specified by the user
     bytes32 constant MESSAGE_EVENT_SELECTOR = 0x6eb224fb001ed210e379b335e35efe88672a8ce935d981a6896b27ffdf52a3b2;
+    bytes32 constant CCTP_MESSAGE_EVENT_SELECTOR = 0x8c5261668696ce22758910d05bab8f186d6eb247ceac2af2e82c7dc17669b036;
 
     //////////////////////////////////////////////////////////////
     //                  EXTERNAL FUNCTIONS                      //
@@ -126,6 +134,89 @@ contract WormholeHelper is Test {
                 ++i;
             }
         }
+    }
+
+    struct LocalCCTPVars {
+        uint256 prevForkId;
+        bytes cctpMessage;
+        bytes[] additionalMessage;
+        bytes32 digest;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        Vm.Log log;
+        uint64 sequence;
+        uint32 nonce;
+        bytes payload;
+        address dstAddress;
+    }
+
+    /// @dev is a helper for https://docs.wormhole.com/wormhole/quick-start/tutorials/cctp
+    /// @param srcChainId represents the wormhole identifier for the source chain
+    /// @param dstForkId represents the dst fork id to deliver the message
+    /// @param expDstAddress represents the expected dst chain receiver of wormhole message
+    /// @param dstRelayer represents the wormhole dst relayer address
+    /// @param dstTransmitter represents the cctp dst transmitter address
+    /// @param logs represents the logs after message dispatch using sendToEvm
+    /// @notice supports only one CCTP transfer and sendToEvm per log
+    function helpWithCctpAndWormhole(
+        uint16 srcChainId,
+        uint256 dstForkId,
+        address expDstAddress,
+        address dstRelayer,
+        address dstTransmitter,
+        Vm.Log[] calldata logs
+    ) external {
+        LocalCCTPVars memory v;
+        v.prevForkId = vm.activeFork();
+        v.additionalMessage = new bytes[](1);
+        vm.selectFork(dstForkId);
+
+        /// @dev identifies the cctp transfer
+        for (uint256 i; i < logs.length; ++i) {
+            v.log = logs[i];
+            if (v.log.topics[0] == CCTP_MESSAGE_EVENT_SELECTOR) {
+                v.cctpMessage = abi.decode(logs[i].data, (bytes));
+                /// @dev prepare circle transmitter on dst chain
+                IMessageTransmitter messageTransmitter = IMessageTransmitter(dstTransmitter);
+
+                vm.startPrank(messageTransmitter.attesterManager());
+                messageTransmitter.enableAttester(vm.addr(420));
+                messageTransmitter.setSignatureThreshold(1);
+                vm.stopPrank();
+
+                v.digest = keccak256(v.cctpMessage);
+                (v.v, v.r, v.s) = vm.sign(420, v.digest);
+                v.additionalMessage[0] = abi.encode(v.cctpMessage, abi.encodePacked(v.r, v.s, v.v));
+            }
+        }
+
+        /// @dev identifies and delivers the wormhole message
+        vm.startBroadcast(dstRelayer);
+        for (uint256 j; j < logs.length; ++j) {
+            v.log = logs[j];
+
+            if (v.log.topics[0] == MESSAGE_EVENT_SELECTOR) {
+                (v.sequence, v.nonce, v.payload,) = abi.decode(v.log.data, (uint64, uint32, bytes, uint8));
+
+                DeliveryInstruction memory instruction = PayloadDecoder.decodeDeliveryInstruction(v.payload);
+
+                v.dstAddress = TypeCasts.bytes32ToAddress(instruction.targetAddress);
+
+                if (expDstAddress == address(0) || expDstAddress == v.dstAddress) {
+                    IWormholeReceiver(v.dstAddress).receiveWormholeMessages(
+                        instruction.payload,
+                        v.additionalMessage,
+                        instruction.senderAddress,
+                        srcChainId,
+                        /// @dev generating some random hash
+                        keccak256(abi.encodePacked(v.sequence, v.nonce))
+                    );
+                }
+            }
+        }
+        vm.stopBroadcast();
+        vm.selectFork(v.prevForkId);
     }
 
     /// @dev helps find logs of `length` for default event selector
