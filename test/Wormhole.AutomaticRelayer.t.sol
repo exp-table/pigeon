@@ -7,8 +7,14 @@ import "forge-std/Test.sol";
 /// local imports
 import "src/wormhole/automatic-relayer/WormholeHelper.sol";
 import "src/wormhole/specialized-relayer/lib/IWormhole.sol";
+import "solady/src/tokens/ERC20.sol";
 
 interface IWormholeRelayerSend {
+    struct MessageKey {
+        uint8 keyType;
+        bytes encodedKey;
+    }
+
     function sendPayloadToEvm(
         uint16 targetChain,
         address targetAddress,
@@ -36,13 +42,39 @@ interface IWormholeRelayerSend {
         VaaKey[] memory vaaKeys
     ) external payable returns (uint64 sequence);
 
+    function sendToEvm(
+        uint16 targetChain,
+        address targetAddress,
+        bytes memory payload,
+        uint256 receiverValue,
+        uint256 paymentForExtraReceiverValue,
+        uint256 gasLimit,
+        uint16 refundChain,
+        address refundAddress,
+        address deliveryProviderAddress,
+        MessageKey[] memory messageKeys,
+        uint8 consistencyLevel
+    ) external payable returns (uint64 sequence);
+
     function quoteEVMDeliveryPrice(uint16 targetChain, uint256 receiverValue, uint256 gasLimit)
         external
         view
         returns (uint256 nativePriceQuote, uint256 targetChainRefundPerGasUnused);
+
+    function getDefaultDeliveryProvider() external view returns (address);
 }
 
 interface IWormholeRelayer is IWormholeRelayerSend {}
+
+interface ITokenManager {
+    function depositForBurnWithCaller(
+        uint256 amount,
+        uint32 destinationDomain,
+        bytes32 mintRecipient,
+        address burnToken,
+        bytes32 destinationCaller
+    ) external returns (uint64 nonce);
+}
 
 contract Target is IWormholeReceiver {
     uint256 public value;
@@ -97,11 +129,35 @@ contract AnotherTarget {
     }
 }
 
+contract CCTPTarget {
+    IMessageTransmitter transmitter;
+
+    constructor(IMessageTransmitter transmitter_) {
+        transmitter = transmitter_;
+    }
+
+    function receiveWormholeMessages(
+        bytes memory payload,
+        bytes[] memory additionalVaas,
+        bytes32 sourceAddress,
+        uint16 sourceChain,
+        bytes32 deliveryHash
+    ) external payable {
+        (bytes memory message, bytes memory attestation) = abi.decode(additionalVaas[0], (bytes, bytes));
+        transmitter.receiveMessage(message, attestation);
+    }
+}
+
 contract WormholeAutomaticRelayerHelperTest is Test {
     IWormhole wormhole = IWormhole(0x98f3c9e6E3fAce36bAAd05FE09d375Ef1464288B);
+    ITokenManager tokenMessenger = ITokenManager(0xBd3fa81B58Ba92a82136038B25aDec7066af3155);
+    ERC20 USDC = ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    ERC20 USDC_POLYGON = ERC20(0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359);
+
     WormholeHelper wormholeHelper;
     Target target;
     Target altTarget;
+    CCTPTarget cctpTarget;
 
     AnotherTarget anotherTarget;
     AdditionalVAATarget addVaaTarget;
@@ -119,6 +175,8 @@ contract WormholeAutomaticRelayerHelperTest is Test {
     address constant L1_RELAYER = 0x27428DD2d3DD32A4D7f7C497eAaa23130d894911;
     address constant L2_1_RELAYER = 0x27428DD2d3DD32A4D7f7C497eAaa23130d894911;
     address constant L2_2_RELAYER = 0x27428DD2d3DD32A4D7f7C497eAaa23130d894911;
+
+    address constant MESSAGE_TRANSMITTER_POLYGON = 0xF3be9355363857F3e001be68856A2f96b4C39Ba9;
 
     address[] public allDstRelayers;
     uint16[] public allDstChainIds;
@@ -139,6 +197,7 @@ contract WormholeAutomaticRelayerHelperTest is Test {
         target = new Target();
         addVaaTarget = new AdditionalVAATarget();
         anotherTarget = new AnotherTarget(L1_CHAIN_ID);
+        cctpTarget = new CCTPTarget(IMessageTransmitter(MESSAGE_TRANSMITTER_POLYGON));
 
         ARBITRUM_FORK_ID = vm.createSelectFork(RPC_ARBITRUM_MAINNET, 38063686);
         altTarget = new Target();
@@ -256,6 +315,61 @@ contract WormholeAutomaticRelayerHelperTest is Test {
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(addVaaTarget.value(), CROSS_CHAIN_MESSAGE);
         assertEq(addVaaTarget.vaalen(), 1);
+    }
+
+    /// @dev test single dst cctp transfers with wormhole
+    function testCctpWormhole() external {
+        vm.selectFork(L1_FORK_ID);
+        address bridgoor = address(32145);
+
+        vm.deal(bridgoor, 2 ether);
+        deal(address(USDC), bridgoor, 100e6);
+        vm.startPrank(bridgoor);
+
+        USDC.approve(address(tokenMessenger), 100e6);
+
+        vm.recordLogs();
+        uint64 nonce = tokenMessenger.depositForBurnWithCaller(
+            100e6,
+            7,
+            bytes32(uint256(uint160(address(cctpTarget)))),
+            address(USDC),
+            bytes32(uint256(uint160(address(cctpTarget))))
+        );
+
+        IWormholeRelayer relayer = IWormholeRelayer(L1_RELAYER);
+
+        IWormholeRelayerSend.MessageKey[] memory messageKeys = new IWormholeRelayerSend.MessageKey[](1);
+        messageKeys[0] = IWormholeRelayerSend.MessageKey(2, abi.encodePacked(uint32(7), nonce));
+
+        (uint256 msgValue,) = relayer.quoteEVMDeliveryPrice(L2_1_CHAIN_ID, 0, 500000);
+
+        relayer.sendToEvm{value: msgValue}(
+            L2_1_CHAIN_ID,
+            address(cctpTarget),
+            bytes(""),
+            0,
+            0,
+            500000,
+            L2_1_CHAIN_ID,
+            address(0),
+            relayer.getDefaultDeliveryProvider(),
+            messageKeys,
+            1
+        );
+
+        wormholeHelper.helpWithCctpAndWormhole(
+            L1_CHAIN_ID,
+            POLYGON_FORK_ID,
+            address(cctpTarget),
+            L2_1_RELAYER,
+            0xF3be9355363857F3e001be68856A2f96b4C39Ba9,
+            vm.getRecordedLogs()
+        );
+        vm.stopPrank();
+
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(USDC_POLYGON.balanceOf(address(cctpTarget)), 100e6);
     }
 
     function _aMostFancyCrossChainFunctionInYourContract(uint16 dstChainId, address receiver) internal {
