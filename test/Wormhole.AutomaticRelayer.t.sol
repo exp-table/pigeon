@@ -81,10 +81,10 @@ contract Target is IWormholeReceiver {
 
     function receiveWormholeMessages(
         bytes memory payload,
-        bytes[] memory additionalVaas,
-        bytes32 sourceAddress,
-        uint16 sourceChain,
-        bytes32 deliveryHash
+        bytes[] memory, /*additionalVaas*/
+        bytes32, /*sourceAddress*/
+        uint16, /*sourceChain*/
+        bytes32 /*deliveryHash*/
     ) external payable {
         value = abi.decode(payload, (uint256));
     }
@@ -97,9 +97,9 @@ contract AdditionalVAATarget is IWormholeReceiver {
     function receiveWormholeMessages(
         bytes memory payload,
         bytes[] memory additionalVaas,
-        bytes32 sourceAddress,
-        uint16 sourceChain,
-        bytes32 deliveryHash
+        bytes32, /*sourceAddress*/
+        uint16, /*sourceChain*/
+        bytes32 /*deliveryHash*/
     ) external payable {
         value = abi.decode(payload, (uint256));
         vaalen = additionalVaas.length;
@@ -119,10 +119,10 @@ contract AnotherTarget {
 
     function receiveWormholeMessages(
         bytes memory payload,
-        bytes[] memory additionalVaas,
-        bytes32 sourceAddress,
+        bytes[] memory, /*additionalVaas*/
+        bytes32, /*sourceAddress*/
         uint16 sourceChain,
-        bytes32 deliveryHash
+        bytes32 /*deliveryHash*/
     ) external payable {
         require(sourceChain == expectedChainId, "Unexpected origin");
         (value, kevin, bob) = abi.decode(payload, (uint256, address, bytes32));
@@ -137,11 +137,11 @@ contract CCTPTarget {
     }
 
     function receiveWormholeMessages(
-        bytes memory payload,
+        bytes memory, /*payload*/
         bytes[] memory additionalVaas,
-        bytes32 sourceAddress,
-        uint16 sourceChain,
-        bytes32 deliveryHash
+        bytes32, /*sourceAddress*/
+        uint16, /*sourceChain*/
+        bytes32 /*deliveryHash*/
     ) external payable {
         (bytes memory message, bytes memory attestation) = abi.decode(additionalVaas[0], (bytes, bytes));
         transmitter.receiveMessage(message, attestation);

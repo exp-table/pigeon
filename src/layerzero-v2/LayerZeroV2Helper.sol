@@ -132,7 +132,6 @@ contract LayerZeroV2Helper is Test {
     /// @return the decoded packet
     function decodePacket(bytes calldata encodedPacket) public pure returns (Packet memory) {
         /// @dev decode the packet header
-        uint8 version = uint8(encodedPacket[0]);
         uint64 nonce = toUint64(encodedPacket, 1);
         uint32 srcEid = toUint32(encodedPacket, 9);
         address sender = toAddress(encodedPacket, 13);

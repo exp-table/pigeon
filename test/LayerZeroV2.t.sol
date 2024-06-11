@@ -43,11 +43,11 @@ contract Target {
     uint256 public value;
 
     function lzReceive(
-        Origin calldata _origin,
-        bytes32 _guid,
+        Origin calldata, /*_origin*/
+        bytes32, /*_guid*/
         bytes calldata _message,
-        address _executor,
-        bytes calldata _extraData
+        address, /*_executor*/
+        bytes calldata /*_extraData*/
     ) external payable {
         value = abi.decode(_message, (uint256));
     }

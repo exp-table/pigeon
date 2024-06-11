@@ -19,9 +19,12 @@ interface ILayerZeroEndpoint {
 contract Target {
     uint256 public value;
 
-    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload)
-        external
-    {
+    function lzReceive(
+        uint16, /*_srcChainId*/
+        bytes calldata, /*_srcAddress*/
+        uint64, /*_nonce*/
+        bytes calldata _payload
+    ) external {
         value = abi.decode(_payload, (uint256));
     }
 }
@@ -37,7 +40,7 @@ contract AnotherTarget {
         expectedId = _expectedId;
     }
 
-    function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload)
+    function lzReceive(uint16 _srcChainId, bytes calldata, /*_srcAddress*/ uint64, /*_nonce*/ bytes calldata _payload)
         external
     {
         require(_srcChainId == expectedId, "Unexpected id");

@@ -11,13 +11,15 @@ contract Target {
         Fail, // execution failed, finalized
         Success, // execution succeeded, finalized
         Retry // execution rejected, can retry later
+
     }
 
-    function executeMessage(address _sender, uint64 _srcChainId, bytes calldata _message, address _executor)
-        external
-        payable
-        returns (ExecutionStatus)
-    {
+    function executeMessage(
+        address, /*_sender*/
+        uint64, /*_srcChainId*/
+        bytes calldata _message,
+        address /*_executor*/
+    ) external payable returns (ExecutionStatus) {
         value = abi.decode(_message, (uint256));
 
         return ExecutionStatus.Success;
@@ -35,13 +37,14 @@ contract AnotherTarget {
         Fail, // execution failed, finalized
         Success, // execution succeeded, finalized
         Retry // execution rejected, can retry later
+
     }
 
     constructor(uint64 _expectedChainId) {
         expectedChainId = _expectedChainId;
     }
 
-    function executeMessage(address _sender, uint64 _srcChainId, bytes calldata _message, address _executor)
+    function executeMessage(address, /*_sender*/ uint64 _srcChainId, bytes calldata _message, address /*_executor*/ )
         external
         payable
         returns (ExecutionStatus)
