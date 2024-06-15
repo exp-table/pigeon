@@ -33,9 +33,9 @@ contract AnotherTarget {
     }
 
     function execute(
-        bytes32 commandId,
+        bytes32, /*commandId*/
         string calldata sourceChain,
-        string calldata sourceAddress,
+        string calldata, /*sourceAddress*/
         bytes calldata payload
     ) external {
         require(

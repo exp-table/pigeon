@@ -22,7 +22,7 @@ interface IInterchainGasPaymaster {
 contract Target {
     uint256 public value;
 
-    function handle(uint32 _origin, bytes32 _sender, bytes calldata _message) external {
+    function handle(uint32, /*_origin*/ bytes32, /*_sender*/ bytes calldata _message) external {
         value = abi.decode(_message, (uint256));
     }
 }
@@ -38,7 +38,7 @@ contract AnotherTarget {
         expectedOrigin = _expectedOrigin;
     }
 
-    function handle(uint32 _origin, bytes32 _sender, bytes calldata _message) external {
+    function handle(uint32 _origin, bytes32, /*_sender*/ bytes calldata _message) external {
         require(_origin == expectedOrigin, "Unexpected origin");
         (value, kevin, bob) = abi.decode(_message, (uint256, address, bytes32));
     }

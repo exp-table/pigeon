@@ -20,8 +20,7 @@ contract Target {
 
     function receiveMessage(bytes memory encodedMessage) public {
         // call the Wormhole core contract to parse and verify the encodedMessage
-        (IWormhole.VM memory wormholeMessage, bool valid, string memory reason) =
-            wormhole.parseAndVerifyVM(encodedMessage);
+        (IWormhole.VM memory wormholeMessage, bool valid,) = wormhole.parseAndVerifyVM(encodedMessage);
         // do security checks and set value
         require(valid);
         value = abi.decode(wormholeMessage.payload, (uint256));
@@ -42,8 +41,7 @@ contract AnotherTarget {
 
     function receiveMessage(bytes memory encodedMessage) public {
         // call the Wormhole core contract to parse and verify the encodedMessage
-        (IWormhole.VM memory wormholeMessage, bool valid, string memory reason) =
-            wormhole.parseAndVerifyVM(encodedMessage);
+        (IWormhole.VM memory wormholeMessage, bool valid,) = wormhole.parseAndVerifyVM(encodedMessage);
         // do security checks and set value
         require(valid);
         require(wormholeMessage.emitterChainId == 2);
@@ -93,7 +91,7 @@ contract WormholeSpecializedRelayerHelperTest is Test {
 
         POLYGON_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET);
         target = new Target(IWormhole(L2_1_CORE));
-        anotherTarget = new AnotherTarget(IWormhole(L2_1_CORE),address(this));
+        anotherTarget = new AnotherTarget(IWormhole(L2_1_CORE), address(this));
 
         ARBITRUM_FORK_ID = vm.createSelectFork(RPC_ARBITRUM_MAINNET);
         altTarget = new Target(IWormhole(L2_2_CORE));
