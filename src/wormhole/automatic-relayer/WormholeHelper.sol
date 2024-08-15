@@ -27,6 +27,7 @@ interface IWormholeReceiver {
 interface IMessageTransmitter {
     function attesterManager() external view returns (address);
     function enableAttester(address newAttester) external;
+    function isEnabledAttester(address attester) external view returns (bool);
     function setSignatureThreshold(uint256 newSignatureThreshold) external;
     function receiveMessage(bytes calldata message, bytes calldata attestation) external;
 }
@@ -180,10 +181,12 @@ contract WormholeHelper is Test {
                 /// @dev prepare circle transmitter on dst chain
                 IMessageTransmitter messageTransmitter = IMessageTransmitter(dstTransmitter);
 
-                vm.startPrank(messageTransmitter.attesterManager());
-                messageTransmitter.enableAttester(vm.addr(420));
-                messageTransmitter.setSignatureThreshold(1);
-                vm.stopPrank();
+                if (!messageTransmitter.isEnabledAttester(vm.addr(420))) {
+                    vm.startPrank(messageTransmitter.attesterManager());
+                    messageTransmitter.enableAttester(vm.addr(420));
+                    messageTransmitter.setSignatureThreshold(1);
+                    vm.stopPrank();
+                }
 
                 v.digest = keccak256(v.cctpMessage);
                 (v.v, v.r, v.s) = vm.sign(420, v.digest);
