@@ -3,7 +3,6 @@ pragma solidity >=0.8.0;
 
 /// library imports
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
 
 struct Packet {
     uint64 nonce;
