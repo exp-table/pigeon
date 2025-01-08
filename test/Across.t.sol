@@ -39,15 +39,15 @@ contract AcrossV3HelperTest is Test {
     Target altTarget;
 
     uint256 L1_FORK_ID;
-    uint256 BASE_FORK_ID;
+    uint256 POLYGON_FORK_ID;
     uint256 ARBITRUM_FORK_ID;
 
     uint256 constant L1_ID = 1;
-    uint256 constant BASE_ID = 8453;
+    uint256 constant POLYGON_ID = 137;
     uint256 constant ARBITRUM_ID = 42161;
 
     address constant L1_spokePool = 0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5;
-    address constant BASE_spokePool = 0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64;
+    address constant POLYGON_spokePool = 0x9295ee1d8C5b022Be115A2AD3c30C72E34e7F096;
     address constant ARBITRUM_spokePool = 0xe35e9842fceaCA96570B734083f4a58e8F7C5f2A;
     address constant RELAYER = address(0x7777);
     address[] public allDstTargets;
@@ -56,15 +56,15 @@ contract AcrossV3HelperTest is Test {
     uint256[] public allDstForks;
 
     string RPC_ETH_MAINNET = vm.envString("ETH_MAINNET_RPC_URL");
-    string RPC_BASE_MAINNET = vm.envString("BASE_MAINNET_RPC_URL");
+    string RPC_POLYGON_MAINNET = vm.envString("POLYGON_MAINNET_RPC_URL");
     string RPC_ARBITRUM_MAINNET = vm.envString("ARBITRUM_MAINNET_RPC_URL");
 
     function setUp() external {
         L1_FORK_ID = vm.createSelectFork(RPC_ETH_MAINNET, 21580621);
         acrossV3Helper = new AcrossV3Helper();
 
-        BASE_FORK_ID = vm.createSelectFork(RPC_BASE_MAINNET, 24780186);
-        target = new Target(BASE_spokePool);
+        POLYGON_FORK_ID = vm.createSelectFork(RPC_POLYGON_MAINNET, 66450382);
+        target = new Target(POLYGON_spokePool);
 
         console.log("BASE_TARGET", address(target));
 
@@ -73,13 +73,13 @@ contract AcrossV3HelperTest is Test {
 
         allDstTargets.push(address(target));
 
-        allDstChainIds.push(BASE_ID);
+        allDstChainIds.push(POLYGON_ID);
         allDstChainIds.push(ARBITRUM_ID);
 
-        allDstForks.push(BASE_FORK_ID);
+        allDstForks.push(POLYGON_FORK_ID);
         allDstForks.push(ARBITRUM_FORK_ID);
 
-        allDstSpokePools.push(BASE_spokePool);
+        allDstSpokePools.push(POLYGON_spokePool);
         allDstSpokePools.push(ARBITRUM_spokePool);
     }
 
@@ -91,14 +91,14 @@ contract AcrossV3HelperTest is Test {
         // \/ This is the part of the code you could copy to use the AcrossV3Helper
         //    in your own tests.
         vm.recordLogs();
-        _someCrossChainFunctionInYourContract(L1_spokePool, BASE_ID);
+        _someCrossChainFunctionInYourContract(L1_spokePool, POLYGON_ID);
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        acrossV3Helper.help(L1_spokePool, BASE_spokePool, RELAYER, BASE_FORK_ID, BASE_ID, L1_ID, logs);
+        acrossV3Helper.help(L1_spokePool, POLYGON_spokePool, RELAYER, POLYGON_FORK_ID, POLYGON_ID, L1_ID, logs);
         // /\
         // ||
         // ||
 
-        vm.selectFork(BASE_FORK_ID);
+        vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.amount(), 12);
     }
 
@@ -110,7 +110,7 @@ contract AcrossV3HelperTest is Test {
             address(this), // depositor
             address(target),
             0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,
-            0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359,
             12,
             12,
             destinationChainId, // destinationChainId
@@ -134,7 +134,7 @@ contract AcrossV3HelperTest is Test {
 
         acrossV3Helper.help(L1_spokePool, allDstSpokePools, RELAYER, allDstForks, allDstChainIds, refundChainIds, logs);
 
-        vm.selectFork(BASE_FORK_ID);
+        vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.amount(), 12);
 
         vm.selectFork(ARBITRUM_FORK_ID);
@@ -145,15 +145,15 @@ contract AcrossV3HelperTest is Test {
         deal(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, address(this), 33); // 12 + 21
         IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48).approve(L1_spokePool, 33);
 
-        // First deposit for BASE
+        // First deposit for POLYGON
         IAcrossSpokePoolV3(L1_spokePool).depositV3(
             address(this),
             address(target),
             0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, // USDC
-            0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, // USDC
+            0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359, // USDC
             12,
             12,
-            BASE_ID,
+            POLYGON_ID,
             address(0),
             uint32(block.timestamp),
             uint32(block.timestamp) + 10 minutes,

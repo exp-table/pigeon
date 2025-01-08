@@ -2,7 +2,7 @@
 
 # pigeon • [![tests](https://github.com/exp-table/pigeon/actions/workflows/ci.yml/badge.svg?label=tests)](https://github.com/exp-table/pigeon/actions/workflows/ci.yml) ![license](https://img.shields.io/github/license/refcell/femplate?label=license) ![solidity](https://img.shields.io/badge/solidity-%5E0.8.21-lightgrey)
 
-**Pigeon** is an open-source modular testing toolkit for cross-chain application development using Arbitray Message Bridges (AMBs).
+**Pigeon** is an open-source modular testing toolkit for cross-chain application development using Arbitrary Message Bridges (AMBs) or RFQ-based bridges.
 
 - Simulates cross-chain transactions as close to mainnet.
 - Helps run cross-chain unit tests on forked mainnet.
@@ -11,7 +11,7 @@
 The library is designed to work with the Foundry testing framework and can be used to streamline the testing process for applications that rely on cross-chain communication.
 
 ## Why Pigeon?
-Arbitrary Message Bridges (AMB) like LayerZero, Axelar, Hyperlane, Celer IM, Wormhole, etc., operate alongside multiple off-chain actors. Hence mocking their entire infrastructure during unit testing is tricky for cross-chain application developers. 
+Arbitrary Message Bridges (AMB) like LayerZero, Axelar, Hyperlane, Celer IM, Wormhole, etc. and RFQ-based bridges like Across. operate alongside multiple off-chain actors. Hence mocking their entire infrastructure during unit testing is tricky for cross-chain application developers. 
 
 Thanks to Pigeon, which will simplify the life of cross-chain application developers by simulating the off-chain infrastructure of such AMBs, helping developers write unit testing across multiple forked networks seamlessly.
 
@@ -28,21 +28,21 @@ By doing near mainnet testing, developers can quickly check sender authenticatio
 | Axelar    |      ✅      |   |
 | Wormhole    |      ✅      |   |
 | Stargate  |      ✅      |   |
-
+| Across    |      ✅      |   |
 ## Getting Started
 
 ### Installation
 
-To install with [**Foundry(git)**](https://github.com/gakonst/foundry):
+To install with [**Foundry(git)**](https://github.com/foundry-rs/foundry):
 
 ```sh
 $ forge install exp-table/pigeon
 ```
-Add `pigeon/=lib/pigeon/` to `remappings.txt`
+Add `pigeon/=lib/pigeon/` to foundry remappings
 
 ### Usage
 
-Once installed, you can use the helper contracts of Pigeon by importing them into your test files. Detailed documentation on all different helper functions for multiple AMBs is in progress.
+Once installed, you can use the helper contracts of Pigeon by importing them into your test files.
 
 It is made to be as simple as instantiating the helper in your test file and simply calling `help` with the appropriate parameters.
 We have provided examples in the test files.
@@ -84,6 +84,8 @@ $ git clone https://github.com/exp-table/pigeon
 ```sh
 ETH_MAINNET_RPC_URL=
 POLYGON_MAINNET_RPC_URL=
+ARBITRUM_MAINNET_RPC_URL=
+
 
 # optional (true/false)
 ENABLE_ESTIMATES=
