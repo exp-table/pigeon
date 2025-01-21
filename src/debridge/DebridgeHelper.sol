@@ -5,7 +5,6 @@ pragma solidity >=0.8.0;
 import "forge-std/Test.sol";
 import {IDebridgeGate} from "./interfaces/IDebridgeGate.sol";
 import {DeBridgeSignatureVerifierMock} from "./mocks/DeBridgeSignatureVerifierMock.sol";
-import {console} from "forge-std/console.sol";
 
 /// @title Debridge Helper
 /// @notice helps simulate Debridge message relaying
@@ -15,7 +14,8 @@ contract DebridgeHelper is Test {
     );
 
     struct HelpArgs {
-        address gate;
+        address srcGate;
+        address dstGate;
         uint256 forkId;
         uint256 destinationChainId;
         bytes32 eventSelector;
@@ -46,13 +46,15 @@ contract DebridgeHelper is Test {
     //                  EXTERNAL FUNCTIONS                      //
     //////////////////////////////////////////////////////////////
     /// @notice helps process multiple destination messages to relay
-    /// @param deBridgeGate represents the deBridge gate on the source chain
+    /// @param srcGate represents the source deBridge gate
+    /// @param dstGates represents the destination deBridge gates
     /// @param forkIds represents the destination chain fork ids
     /// @param destinationChainIds represents the destination chain ids
     /// @param debridgeGateAdmins represents the admin of the debridge gate
     /// @param logs represents the recorded message logs
     function help(
-        address deBridgeGate,
+        address srcGate,
+        address[] memory dstGates,
         uint256[] memory forkIds,
         uint256[] memory destinationChainIds,
         address[] memory debridgeGateAdmins,
@@ -62,7 +64,8 @@ contract DebridgeHelper is Test {
         for (uint256 i; i < chains;) {
             _help(
                 HelpArgs({
-                    gate: deBridgeGate,
+                    srcGate: srcGate,
+                    dstGate: dstGates[i],
                     forkId: forkIds[i],
                     destinationChainId: destinationChainIds[i],
                     eventSelector: DebridgeSend,
@@ -76,7 +79,8 @@ contract DebridgeHelper is Test {
         }
     }
     /// @notice helps process multiple destination messages to relay
-    /// @param deBridgeGate represents the deBridge gate on the source chain
+    /// @param srcGate represents the source deBridge gate
+    /// @param dstGates represents the destination deBridge gate
     /// @param forkIds represents the destination chain fork ids
     /// @param destinationChainIds represents the destination chain ids
     /// @param debridgeGateAdmins represents the admin of the debridge gate
@@ -84,7 +88,8 @@ contract DebridgeHelper is Test {
     /// @param logs represents the recorded message logs
 
     function help(
-        address deBridgeGate,
+        address srcGate,
+        address[] memory dstGates,
         uint256[] memory forkIds,
         uint256[] memory destinationChainIds,
         address[] memory debridgeGateAdmins,
@@ -95,7 +100,8 @@ contract DebridgeHelper is Test {
         for (uint256 i; i < chains;) {
             _help(
                 HelpArgs({
-                    gate: deBridgeGate,
+                    srcGate: srcGate,
+                    dstGate: dstGates[i],
                     forkId: forkIds[i],
                     destinationChainId: destinationChainIds[i],
                     eventSelector: eventSelector,
@@ -111,20 +117,23 @@ contract DebridgeHelper is Test {
 
     /// @notice helps process single destination message to relay
     /// @param debridgeGateAdmin represents the admin of the debridge gate
-    /// @param deBridgeGate represents the deBridge gate on the source chain
+    /// @param srcGate represents the source deBridge gate
+    /// @param dstGate represents the destination deBridge gate
     /// @param forkId represents the destination chain fork id
     /// @param destinationChainId represents the destination chain id
     /// @param logs represents the recorded message logs
     function help(
         address debridgeGateAdmin,
-        address deBridgeGate,
+        address srcGate,
+        address dstGate,
         uint256 forkId,
         uint256 destinationChainId,
         Vm.Log[] calldata logs
     ) external {
         _help(
             HelpArgs({
-                gate: deBridgeGate,
+                srcGate: srcGate,
+                dstGate: dstGate,
                 forkId: forkId,
                 destinationChainId: destinationChainId,
                 eventSelector: DebridgeSend,
@@ -136,14 +145,16 @@ contract DebridgeHelper is Test {
 
     /// @notice helps process single destination message to relay
     /// @param debridgeGateAdmin represents the admin of the debridge gate
-    /// @param deBridgeGate represents the deBridge gate on the source chain
+    /// @param srcGate represents the source deBridge gate
+    /// @param dstGate represents the destination deBridge gate
     /// @param forkId represents the destination chain fork id
     /// @param destinationChainId represents the destination chain id
     /// @param eventSelector represents a custom event selector
     /// @param logs represents the recorded message logs
     function help(
         address debridgeGateAdmin,
-        address deBridgeGate,
+        address srcGate,
+        address dstGate,
         uint256 forkId,
         uint256 destinationChainId,
         bytes32 eventSelector,
@@ -151,7 +162,8 @@ contract DebridgeHelper is Test {
     ) external {
         _help(
             HelpArgs({
-                gate: deBridgeGate,
+                srcGate: srcGate,
+                dstGate: dstGate,
                 forkId: forkId,
                 destinationChainId: destinationChainId,
                 eventSelector: eventSelector,
@@ -167,14 +179,14 @@ contract DebridgeHelper is Test {
         LocalVars memory vars;
         vars.originChainId = uint256(block.chainid);
         vars.prevForkId = vm.activeFork();
-        vm.selectFork(args.forkId);
 
         uint256 count = args.logs.length;
         for (uint256 i; i < count;) {
             // https://docs.debridge.finance/the-debridge-messaging-protocol/development-guides/building-an-evm-based-dapp/evm-smart-contract-interfaces
             // DeBridgeSend is the event selector for the Sent event emitted by the DeBridge gate contract
             // Requests must be filled using the `.claim()` function of the DeBridge gate contract.
-            if (args.logs[i].topics[0] == args.eventSelector && args.logs[i].emitter == args.gate) {
+            if (args.logs[i].topics[0] == args.eventSelector && args.logs[i].emitter == args.srcGate) {
+                vm.selectFork(args.forkId);
                 vars.destinationChainId = uint256(args.logs[i].topics[2]);
 
                 if (vars.destinationChainId == args.destinationChainId) {
@@ -187,15 +199,15 @@ contract DebridgeHelper is Test {
                     DeBridgeSignatureVerifierMock _verifier = new DeBridgeSignatureVerifierMock();
                     // -- need to overwrite the signature verifier address
                     vm.startPrank(debridgeGateAdmin);
-                    IDebridgeGate(args.gate).setSignatureVerifier(address(_verifier));
+                    IDebridgeGate(args.dstGate).setSignatureVerifier(address(_verifier));
                     vm.stopPrank();
 
                     IDebridgeGate.DebridgeInfo memory debridgeInfo =
-                        IDebridgeGate(args.gate).getDebridge(logData.debridgeId);
-                    deal(debridgeInfo.tokenAddress, args.gate, logData.amount);
+                        IDebridgeGate(args.dstGate).getDebridge(logData.debridgeId);
+                    deal(debridgeInfo.tokenAddress, args.dstGate, logData.amount);
 
                     address receiver = address(bytes20(logData.receiver));
-                    IDebridgeGate(args.gate).claim(
+                    IDebridgeGate(args.dstGate).claim(
                         logData.debridgeId,
                         logData.amount,
                         vars.originChainId,

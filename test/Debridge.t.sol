@@ -74,7 +74,7 @@ contract DebridgeHelperTest is Test {
         _someCrossChainFunctionInYourContract(L1_debridge, ARBITRUM_ID, amount);
         Vm.Log[] memory logs = vm.getRecordedLogs();
 
-        debridgeHelper.help(ARBITRUM_ADMIN, L1_debridge, ARBITRUM_FORK_ID, ARBITRUM_ID, logs);
+        debridgeHelper.help(ARBITRUM_ADMIN, L1_debridge, ARBITRUM_debridge, ARBITRUM_FORK_ID, ARBITRUM_ID, logs);
         // /\
         // ||
         // ||
@@ -115,7 +115,11 @@ contract DebridgeHelperTest is Test {
         debridgeGateAdmins[0] = ARBITRUM_ADMIN;
         debridgeGateAdmins[1] = POLYGON_ADMIN;
 
-        debridgeHelper.help(L1_debridge, allDstForks, allDstChainIds, debridgeGateAdmins, logs);
+        address[] memory dstGates = new address[](2);
+        dstGates[0] = ARBITRUM_debridge;
+        dstGates[1] = POLYGON_debridge;
+
+        debridgeHelper.help(L1_debridge, dstGates, allDstForks, allDstChainIds, debridgeGateAdmins, logs);
 
         vm.selectFork(ARBITRUM_FORK_ID);
         assertApproxEqAbs(IERC20(ARBITRUM_DEBRIDGE_TOKEN).balanceOf(target), amount, amount * 1e4 / 1e5);
