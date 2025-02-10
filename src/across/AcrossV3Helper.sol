@@ -6,17 +6,21 @@ import "forge-std/Test.sol";
 import {IAcrossSpokePoolV3} from "./interfaces/IAcrossSpokePoolV3.sol";
 import {IERC20} from "./interfaces/IERC20.sol";
 
+
 /// @title AcrossV3 Helper
 /// @notice helps simulate AcrossV3 message relaying
 contract AcrossV3Helper is Test {
     bytes32 constant V3FundsDeposited = keccak256(
         "V3FundsDeposited(address,address,uint256,uint256,uint256,uint32,uint32,uint32,uint32,address,address,address,bytes)"
     );
+    
+    bytes32 constant FundsDeposited = keccak256(
+        "FundsDeposited(bytes32,bytes32,uint256,uint256,uint256,uint256,uint32,uint32,uint32,bytes32,bytes32,bytes32,bytes)"
+    );
 
     //////////////////////////////////////////////////////////////
     //                  EXTERNAL FUNCTIONS                      //
     //////////////////////////////////////////////////////////////
-
     /// @notice helps process multiple destination messages to relay
     /// @param sourceSpokePool represents the across spoke pool on the source chain
     /// @param destinationSpokePools represents the across spoke pools on the destination chain
@@ -35,7 +39,6 @@ contract AcrossV3Helper is Test {
         Vm.Log[] calldata logs
     ) external {
         for (uint256 i; i < destinationSpokePools.length; ++i) {
-            console.log("i", i);
             _help(
                 HelpArgs({
                     sourceSpokePool: sourceSpokePool,
@@ -44,42 +47,6 @@ contract AcrossV3Helper is Test {
                     forkId: forkIds[i],
                     destinationChainId: destinationChainIds[i],
                     refundChainId: refundChainIds[i],
-                    eventSelector: V3FundsDeposited,
-                    logs: logs
-                })
-            );
-        }
-    }
-
-    /// @notice helps process multiple destination messages to relay
-    /// @param sourceSpokePool represents the across spoke pool on the source chain
-    /// @param destinationSpokePools represents the across spoke pools on the destination chain
-    /// @param relayer represents the relayer address
-    /// @param forkIds represents the destination chain fork ids
-    /// @param destinationChainIds represents the destination chain ids
-    /// @param refundChainIds represents the refund chain ids
-    /// @param eventSelector represents a custom event selector
-    /// @param logs represents the recorded message logs
-    function help(
-        address sourceSpokePool,
-        address[] memory destinationSpokePools,
-        address relayer,
-        uint256[] memory forkIds,
-        uint256[] memory destinationChainIds,
-        uint256[] memory refundChainIds,
-        bytes32 eventSelector,
-        Vm.Log[] calldata logs
-    ) external {
-        for (uint256 i; i < destinationSpokePools.length; ++i) {
-            _help(
-                HelpArgs({
-                    sourceSpokePool: sourceSpokePool,
-                    destinationSpokePool: destinationSpokePools[i],
-                    relayer: relayer,
-                    forkId: forkIds[i],
-                    destinationChainId: destinationChainIds[i],
-                    refundChainId: refundChainIds[i],
-                    eventSelector: eventSelector,
                     logs: logs
                 })
             );
@@ -91,7 +58,6 @@ contract AcrossV3Helper is Test {
     /// @param destinationSpokePool represents the across spoke pool on the destination chain
     /// @param relayer represents the relayer address
     /// @param forkId represents the destination chain fork id
-    /// @param destinationChainId represents the destination chain id
     /// @param refundChainId represents the refund chain id
     /// @param logs represents the recorded message logs
     function help(
@@ -111,39 +77,6 @@ contract AcrossV3Helper is Test {
                 forkId: forkId,
                 destinationChainId: destinationChainId,
                 refundChainId: refundChainId,
-                eventSelector: V3FundsDeposited,
-                logs: logs
-            })
-        );
-    }
-
-    /// @notice helps process a single destination message to relay
-    /// @param sourceSpokePool represents the across spoke pool on the source chain
-    /// @param destinationSpokePool represents the across spoke pool on the destination chain
-    /// @param relayer represents the relayer address
-    /// @param forkId represents the destination chain fork id
-    /// @param refundChainId represents the refund chain id
-    /// @param eventSelector represents a custom bytes32 event selector
-    /// @param logs represents the recorded message logs
-    function help(
-        address sourceSpokePool,
-        address destinationSpokePool,
-        address relayer,
-        uint256 forkId,
-        uint256 destinationChainId,
-        uint256 refundChainId,
-        bytes32 eventSelector,
-        Vm.Log[] calldata logs
-    ) external {
-        _help(
-            HelpArgs({
-                sourceSpokePool: sourceSpokePool,
-                destinationSpokePool: destinationSpokePool,
-                relayer: relayer,
-                forkId: forkId,
-                destinationChainId: destinationChainId,
-                refundChainId: refundChainId,
-                eventSelector: eventSelector,
                 logs: logs
             })
         );
@@ -156,7 +89,6 @@ contract AcrossV3Helper is Test {
         uint256 forkId;
         uint256 destinationChainId;
         uint256 refundChainId;
-        bytes32 eventSelector;
         Vm.Log[] logs;
     }
 
@@ -194,8 +126,10 @@ contract AcrossV3Helper is Test {
             // V3FundsDeposited is the event selector for the V3FundsDeposited event emitted by the SpokePool contract
             // Relayers should note that all deposits in V3 are associated with V3FundsDeposited events
             // and must be filled using the fillV3Relay function of the SpokePool contract.
-            if (args.logs[i].topics[0] == args.eventSelector && args.logs[i].emitter == args.sourceSpokePool) {
+            if ( (args.logs[i].topics[0] == FundsDeposited || args.logs[i].topics[0] == V3FundsDeposited) && args.logs[i].emitter == args.sourceSpokePool) {
                 vars.destinationChainId = uint256(args.logs[i].topics[1]);
+
+
 
                 if (vars.destinationChainId == args.destinationChainId) {
                     vars.logData = _decodeLogData(args.logs[i]);
@@ -204,6 +138,7 @@ contract AcrossV3Helper is Test {
                     deal(vars.logData.outputToken, args.relayer, vars.logData.outputAmount);
 
                     IERC20(vars.logData.outputToken).approve(args.destinationSpokePool, vars.logData.outputAmount);
+
                     IAcrossSpokePoolV3(args.destinationSpokePool).fillV3Relay(
                         IAcrossSpokePoolV3.V3RelayData({
                             depositor: address(uint160(uint256(args.logs[i].topics[2]))),
