@@ -3,6 +3,8 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
+import { console2 } from "forge-std/console2.sol";
+
 import {AcrossV3Helper} from "src/across/AcrossV3Helper.sol";
 import {IAcrossSpokePoolV3} from "src/across/interfaces/IAcrossSpokePoolV3.sol";
 import {IAcrossV3Interpreter} from "src/across/interfaces/IAcrossV3Interpreter.sol";
@@ -93,7 +95,7 @@ contract AcrossV3HelperTest is Test {
         vm.recordLogs();
         _someCrossChainFunctionInYourContract(L1_spokePool, POLYGON_ID);
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        acrossV3Helper.help(L1_spokePool, POLYGON_spokePool, RELAYER, POLYGON_FORK_ID, POLYGON_ID, L1_ID, logs);
+        acrossV3Helper.help(L1_spokePool, POLYGON_spokePool, RELAYER, 0, POLYGON_FORK_ID, POLYGON_ID, L1_ID, logs);
         // /\
         // ||
         // ||
@@ -132,7 +134,7 @@ contract AcrossV3HelperTest is Test {
         refundChainIds[0] = L1_ID;
         refundChainIds[1] = L1_ID;
 
-        acrossV3Helper.help(L1_spokePool, allDstSpokePools, RELAYER, allDstForks, allDstChainIds, refundChainIds, logs);
+        acrossV3Helper.help(L1_spokePool, allDstSpokePools, RELAYER, 0, allDstForks, allDstChainIds, refundChainIds, logs);
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.amount(), 12);
@@ -176,5 +178,18 @@ contract AcrossV3HelperTest is Test {
             0,
             abi.encode(uint256(21))
         );
+    }
+
+    function testAcrossWithWarpTimestamp() external {
+        vm.selectFork(L1_FORK_ID);
+        vm.warp(1736349707);
+
+        vm.recordLogs();
+        _someCrossChainFunctionInYourContract(L1_spokePool, POLYGON_ID);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        acrossV3Helper.help(L1_spokePool, POLYGON_spokePool, RELAYER, 1736349707, POLYGON_FORK_ID, POLYGON_ID, L1_ID, logs);
+
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(target.amount(), 12);
     }
 }

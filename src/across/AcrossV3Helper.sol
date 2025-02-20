@@ -25,6 +25,7 @@ contract AcrossV3Helper is Test {
     /// @param sourceSpokePool represents the across spoke pool on the source chain
     /// @param destinationSpokePools represents the across spoke pools on the destination chain
     /// @param relayer represents the relayer address
+    /// @param warpTimestamp represents the warp timestamp
     /// @param forkIds represents the destination chain fork ids
     /// @param destinationChainIds represents the destination chain ids
     /// @param refundChainIds represents the refund chain ids
@@ -33,6 +34,7 @@ contract AcrossV3Helper is Test {
         address sourceSpokePool,
         address[] memory destinationSpokePools,
         address relayer,
+        uint256 warpTimestamp,
         uint256[] memory forkIds,
         uint256[] memory destinationChainIds,
         uint256[] memory refundChainIds,
@@ -47,6 +49,7 @@ contract AcrossV3Helper is Test {
                     forkId: forkIds[i],
                     destinationChainId: destinationChainIds[i],
                     refundChainId: refundChainIds[i],
+                    warpTimestamp: warpTimestamp,
                     logs: logs
                 })
             );
@@ -57,6 +60,7 @@ contract AcrossV3Helper is Test {
     /// @param sourceSpokePool represents the across spoke pool on the source chain
     /// @param destinationSpokePool represents the across spoke pool on the destination chain
     /// @param relayer represents the relayer address
+    /// @param warpTimestamp represents the warp timestamp
     /// @param forkId represents the destination chain fork id
     /// @param refundChainId represents the refund chain id
     /// @param logs represents the recorded message logs
@@ -64,6 +68,7 @@ contract AcrossV3Helper is Test {
         address sourceSpokePool,
         address destinationSpokePool,
         address relayer,
+        uint256 warpTimestamp,
         uint256 forkId,
         uint256 destinationChainId,
         uint256 refundChainId,
@@ -77,6 +82,7 @@ contract AcrossV3Helper is Test {
                 forkId: forkId,
                 destinationChainId: destinationChainId,
                 refundChainId: refundChainId,
+                warpTimestamp: warpTimestamp,
                 logs: logs
             })
         );
@@ -89,6 +95,7 @@ contract AcrossV3Helper is Test {
         uint256 forkId;
         uint256 destinationChainId;
         uint256 refundChainId;
+        uint256 warpTimestamp;
         Vm.Log[] logs;
     }
 
@@ -120,6 +127,9 @@ contract AcrossV3Helper is Test {
         vars.prevForkId = vm.activeFork();
 
         vm.selectFork(args.forkId);
+        if (args.warpTimestamp > 0) {
+            vm.warp(args.warpTimestamp);
+        }
         vm.startBroadcast(args.relayer);
         for (uint256 i; i < args.logs.length; i++) {
             // https://docs.across.to/introduction/migration-guides/migration-from-v2-to-v3
