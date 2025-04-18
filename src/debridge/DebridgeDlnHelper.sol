@@ -4,6 +4,8 @@ pragma solidity >=0.8.0;
 /// library imports
 import "forge-std/Test.sol";
 import {IExternalCallExecutor} from "./interfaces/IExternalCallExecutor.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IDlnDestination, Order} from "./interfaces/IDlnDestination.sol";
 
 /// @title Debridge DLN Helper
 /// @notice helps simulate Debridge DLN message relaying with hooks
@@ -12,45 +14,7 @@ contract DebridgeDlnHelper is Test {
         "CreatedOrder((uint64,bytes,uint256,bytes,uint256,uint256,bytes,uint256,bytes,bytes,bytes,bytes,bytes,bytes),bytes32,bytes,uint256,uint256,uint32,bytes)"
     );
 
-    /// @dev  Struct representing an order.
-    struct Order {
-        /// Nonce for each maker.
-        uint64 makerOrderNonce;
-        /// Order maker address (EOA signer for EVM) in the source chain.
-        bytes makerSrc;
-        /// Chain ID where the order's was created.
-        uint256 giveChainId;
-        /// Address of the ERC-20 token that the maker is offering as part of this order.
-        /// Use the zero address to indicate that the maker is offering a native blockchain token (such as Ether, Matic, etc.).
-        bytes giveTokenAddress;
-        /// Amount of tokens the maker is offering.
-        uint256 giveAmount;
-        // the ID of the chain where an order should be fulfilled.
-        uint256 takeChainId;
-        /// Address of the ERC-20 token that the maker is willing to accept on the destination chain.
-        bytes takeTokenAddress;
-        /// Amount of tokens the maker is willing to accept on the destination chain.
-        uint256 takeAmount;
-        /// Address on the destination chain where funds should be sent upon order fulfillment.
-        bytes receiverDst;
-        /// Address on the source (current) chain authorized to patch the order by adding more input tokens, making it more attractive to takers.
-        bytes givePatchAuthoritySrc;
-        /// Address on the destination chain authorized to patch the order by reducing the take amount, making it more attractive to takers,
-        /// and can also cancel the order in the take chain.
-        bytes orderAuthorityAddressDst;
-        // An optional address restricting anyone in the open market from fulfilling
-        // this order but the given address. This can be useful if you are creating a order
-        // for a specific taker. By default, set to empty bytes array (0x)
-        bytes allowedTakerDst;
-        // An optional address on the source (current) chain where the given input tokens
-        // would be transferred to in case order cancellation is initiated by the orderAuthorityAddressDst
-        // on the destination chain. This property can be safely set to an empty bytes array (0x):
-        // in this case, tokens would be transferred to the arbitrary address specified
-        // by the orderAuthorityAddressDst upon order cancellation
-        bytes allowedCancelBeneficiarySrc;
-        /// An optional external call data payload.
-        bytes externalCall;
-    }
+    address constant TAKER_ADDRESS = 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf;
 
     struct HelpArgs {
         address dlnSource;
@@ -206,11 +170,7 @@ contract DebridgeDlnHelper is Test {
 
         uint256 count = args.logs.length;
         for (uint256 i; i < count;) {
-            // https://docs.debridge.finance/dln-the-debridge-liquidity-network-protocol/interacting-with-smart-contracts/placing-orders
-            // CreatedOrder is the event selector for the createOrder event emitted by the DeBridge DLN contract
-            if (args.logs[i].topics[0] == args.eventSelector) {
-                vm.selectFork(args.forkId);
-
+            if (args.logs[i].emitter == args.dlnSource && args.logs[i].topics[0] == args.eventSelector) {
                 (
                     Order memory order,
                     bytes32 orderId,
@@ -220,43 +180,48 @@ contract DebridgeDlnHelper is Test {
                     uint32 reeferralCode,
                     bytes memory metadata
                 ) = abi.decode(args.logs[i].data, (Order, bytes32, bytes, uint256, uint256, uint32, bytes));
-                DebridgeLogData memory logData = DebridgeLogData({
-                    order: order,
-                    orderId: orderId,
-                    affiliateFee: affiliateFee,
-                    nativeFixFee: nativeFixFee,
-                    percentFee: percentFee,
-                    reeferralCode: reeferralCode,
-                    metadata: metadata
-                });
 
                 if (order.takeChainId == args.destinationChainId) {
+                    vm.selectFork(args.forkId);
+
+                    DebridgeLogData memory logData = DebridgeLogData({
+                        order: order,
+                        orderId: orderId,
+                        affiliateFee: affiliateFee,
+                        nativeFixFee: nativeFixFee,
+                        percentFee: percentFee,
+                        reeferralCode: reeferralCode,
+                        metadata: metadata
+                    });
                     vars.logData = logData;
 
-                    // How do we fulfill the order?
-                    // https://docs.debridge.finance/dln-the-debridge-liquidity-network-protocol/interacting-with-smart-contracts/filling-orders
+                    address dlnDestinationAddress = args.dlnDestination;
+                    address takerAddress = TAKER_ADDRESS;
+                    address unlockAuthority = takerAddress;
+                    uint256 fulfillAmount = order.takeAmount;
+                    address tokenAddress = address(bytes20(order.takeTokenAddress));
+                    bytes memory permitEnvelope = ""; // Always empty now
+                    uint256 msgValue = 0;
 
-                    // deal tokens to receiver
-                    address receiver = address(bytes20(logData.order.receiverDst));
-                    address token = address(bytes20(logData.order.takeTokenAddress));
-                    if (token == address(0)) {
-                        deal(receiver, logData.order.takeAmount);
-
-                        if (logData.order.externalCall.length > 0) {
-                            IExternalCallExecutor(receiver).onEtherReceived(
-                                logData.orderId, receiver, logData.order.externalCall
-                            );
-                        }
+                    if (tokenAddress == address(0)) {
+                        // Native token transfer
+                        msgValue = fulfillAmount;
+                        vm.deal(takerAddress, takerAddress.balance + msgValue);
                     } else {
-                        deal(token, receiver, logData.order.takeAmount);
-
-                        // execute hooks
-                        if (logData.order.externalCall.length > 0) {
-                            IExternalCallExecutor(receiver).onERC20Received(
-                                logData.orderId, token, logData.order.takeAmount, receiver, logData.order.externalCall
-                            );
-                        }
+                        // ERC20 token transfer - Use approve instead of permit
+                        // Ensure taker has the tokens
+                        deal(tokenAddress, takerAddress, fulfillAmount);
+                        // Prank as taker to approve the DlnDestination contract
+                        vm.prank(takerAddress);
+                        IERC20(tokenAddress).approve(dlnDestinationAddress, fulfillAmount);
                     }
+
+                    vm.prank(takerAddress, takerAddress);
+                    IDlnDestination(dlnDestinationAddress).fulfillOrder{value: msgValue}(
+                        order, fulfillAmount, orderId, permitEnvelope, unlockAuthority, takerAddress
+                    );
+
+                    vm.selectFork(vars.prevForkId);
                 }
             }
 
@@ -265,6 +230,8 @@ contract DebridgeDlnHelper is Test {
             }
         }
 
-        vm.selectFork(vars.prevForkId);
+        if (vm.activeFork() != vars.prevForkId) {
+            vm.selectFork(vars.prevForkId);
+        }
     }
 }

@@ -44,7 +44,6 @@ interface IDlnSource {
         uint32 _referralCode,
         bytes calldata _permitEnvelope
     ) external payable returns (bytes32 orderId);
-    
+
     function globalFixedNativeFee() external view returns (uint256);
 }
-

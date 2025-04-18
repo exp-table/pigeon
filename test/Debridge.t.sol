@@ -5,15 +5,12 @@ import {IERC20} from "src/across/interfaces/IERC20.sol";
 import "forge-std/Test.sol";
 
 import {DebridgeHelper} from "src/debridge/DebridgeHelper.sol";
-import {DebridgeDlnHelper} from "src/debridge/DebridgeDlnHelper.sol";
 import {IDebridgeGate} from "src/debridge/interfaces/IDebridgeGate.sol";
-import {IDlnSource} from "src/debridge/interfaces/IDlnSource.sol";
 
 import "forge-std/console2.sol";
 
 contract DebridgeHelperTest is Test {
     DebridgeHelper debridgeHelper;
-    DebridgeDlnHelper debridgeDlnHelper;
 
     address public target = address(this);
 
@@ -32,10 +29,6 @@ contract DebridgeHelperTest is Test {
     address constant L1_debridge = 0x43dE2d77BF8027e25dBD179B491e8d64f38398aA;
     address constant ARBITRUM_debridge = 0x43dE2d77BF8027e25dBD179B491e8d64f38398aA;
     address constant POLYGON_debridge = 0x43dE2d77BF8027e25dBD179B491e8d64f38398aA;
-
-    address constant L1_DEBRIDGE_DLN = 0xeF4fB24aD0916217251F553c0596F8Edc630EB66;
-    address constant ARBITRUM_DEBRIDGE_DLN = 0xeF4fB24aD0916217251F553c0596F8Edc630EB66;
-    address constant POLYGON_DEBRIDGE_DLN = 0xeF4fB24aD0916217251F553c0596F8Edc630EB66;
 
     address[] public allDstTargets;
     uint256[] public allDstChainIds;
@@ -62,7 +55,6 @@ contract DebridgeHelperTest is Test {
 
         vm.selectFork(L1_FORK_ID);
         debridgeHelper = new DebridgeHelper();
-        debridgeDlnHelper = new DebridgeDlnHelper();
 
         allDstTargets.push(target);
         allDstTargets.push(target);
@@ -93,30 +85,6 @@ contract DebridgeHelperTest is Test {
         assertApproxEqAbs(IERC20(ARBITRUM_DEBRIDGE_TOKEN).balanceOf(target), amount, amount * 1e4 / 1e5);
     }
 
-    function testSimpleDebridgeDln() external {
-        vm.selectFork(L1_FORK_ID);
-        uint256 amount = 1e10;
-
-        console2.log("----A");
-        // ||
-        // ||
-        // \/ This is the part of the code you could copy to use the DebridgeHelper
-        //    in your own tests.
-        vm.recordLogs();
-        _someCrossChainFunctionInYourContractDln(L1_DEBRIDGE_DLN, amount);
-        Vm.Log[] memory logs = vm.getRecordedLogs();
-        console2.log("----B");
-
-        debridgeDlnHelper.help(L1_DEBRIDGE_DLN, ARBITRUM_DEBRIDGE_DLN, ARBITRUM_FORK_ID, ARBITRUM_ID, logs);
-        console2.log("----C");
-        // /\
-        // ||
-        // ||
-
-        vm.selectFork(ARBITRUM_FORK_ID);
-        assertApproxEqAbs(IERC20(ARBITRUM_USDC).balanceOf(address(this)), amount, amount * 1e4 / 1e5);
-    }
-
     function _someCrossChainFunctionInYourContract(
         address sourceDebridgeGate,
         uint256 destinationChainId,
@@ -135,33 +103,6 @@ contract DebridgeHelperTest is Test {
             0, // referral code
             "" // auto params
         );
-    }
-
-    function _someCrossChainFunctionInYourContractDln(address sourceDebridgeDln, uint256 amount) internal {
-        uint256 nativeFixFee = IDebridgeGate(sourceDebridgeDln).globalFixedNativeFee();
-
-        deal(L1_USDC, address(this), amount);
-        IERC20(L1_USDC).approve(sourceDebridgeDln, amount);
-
-        IDlnSource(sourceDebridgeDln).createOrder{value: nativeFixFee}(
-            IDlnSource.OrderCreation({
-                giveTokenAddress: L1_USDC,
-                giveAmount: amount,
-                takeTokenAddress: abi.encodePacked(ARBITRUM_USDC),
-                takeAmount: amount - amount * 1e4 / 1e5,
-                takeChainId: ARBITRUM_ID,
-                receiverDst: abi.encodePacked(address(this)),
-                givePatchAuthoritySrc: address(this),
-                orderAuthorityAddressDst: abi.encodePacked(address(this)),
-                allowedTakerDst: "",
-                externalCall: "",
-                allowedCancelBeneficiarySrc: ""
-            }),
-            "",
-            0,
-            ""
-        );
-
     }
 
     function testMultiDstDebridge() external {

@@ -196,9 +196,8 @@ contract LayerZeroHelper is Test {
             Vm.Log memory log = logs[i];
             // unsure if the default library always emits the event
             if (
-                log
-                    /*log.emitter == defaultLibrary &&*/
-                    .topics[0] == eventSelector
+                /*log.emitter == defaultLibrary &&*/
+                log.topics[0] == eventSelector
             ) {
                 bytes memory payload = abi.decode(log.data, (bytes));
                 LayerZeroPacket.Packet memory packet = LayerZeroPacket.getPacket(payload);
