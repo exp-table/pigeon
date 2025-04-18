@@ -238,14 +238,18 @@ contract DebridgeDlnHelper is Test {
                     address token = address(bytes20(logData.order.takeTokenAddress));
                     if (token == address(0)) {
                         deal(receiver, logData.order.takeAmount);
+
+                        IExternalCallExecutor(receiver).onEtherReceived(
+                            logData.orderId, receiver, logData.order.externalCall
+                        );
                     } else {
                         deal(token, receiver, logData.order.takeAmount);
-                    }
 
-                    // execute hooks
-                    IExternalCallExecutor(receiver).onERC20Received(
-                        logData.orderId, token, logData.order.takeAmount, receiver, logData.order.externalCall
-                    );
+                        // execute hooks
+                        IExternalCallExecutor(receiver).onERC20Received(
+                            logData.orderId, token, logData.order.takeAmount, receiver, logData.order.externalCall
+                        );
+                    }
                 }
             }
 
