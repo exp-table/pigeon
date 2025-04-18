@@ -34,7 +34,7 @@ contract SampleExecutor is IExternalCallExecutor {
         external
         payable
         override
-        returns (bool callSucceeded, bytes memory /*nothing*/ )
+        returns (bool callSucceeded, bytes memory callResult)
     {
         lastOrderId = _orderId;
         lastFallbackAddress = _fallbackAddress;
@@ -43,6 +43,7 @@ contract SampleExecutor is IExternalCallExecutor {
 
         counter++;
         callSucceeded = true;
+        callResult = "";
 
         emit Log(callSucceeded, msg.value, counter);
     }
@@ -57,7 +58,7 @@ contract SampleExecutor is IExternalCallExecutor {
         uint256 _transferredAmount, // Amount received by *this* contract from adapter
         address _fallbackAddress,
         bytes memory _payload
-    ) external override returns (bool callSucceeded, bytes memory /*nothing*/ ) {
+    ) external override returns (bool callSucceeded, bytes memory callResult) {
         lastOrderId = _orderId;
         lastToken = _token;
         lastAmount = _transferredAmount;
@@ -66,6 +67,7 @@ contract SampleExecutor is IExternalCallExecutor {
 
         counter++;
         callSucceeded = true;
+        callResult = "";
 
         emit Log(callSucceeded, _transferredAmount, counter);
     }
