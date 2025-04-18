@@ -236,7 +236,11 @@ contract DebridgeDlnHelper is Test {
                     // deal tokens to receiver
                     address receiver = address(bytes20(logData.order.receiverDst));
                     address token = address(bytes20(logData.order.takeTokenAddress));
-                    deal(token, receiver, logData.order.takeAmount);
+                    if (token == address(0)) {
+                        deal(receiver, logData.order.takeAmount);
+                    } else {
+                        deal(token, receiver, logData.order.takeAmount);
+                    }
 
                     // execute hooks
                     IExternalCallExecutor(receiver).onERC20Received(
