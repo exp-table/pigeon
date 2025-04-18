@@ -5,8 +5,6 @@ pragma solidity >=0.8.0;
 import "forge-std/Test.sol";
 import {IExternalCallExecutor} from "./interfaces/IExternalCallExecutor.sol";
 
-import "forge-std/console2.sol";
-
 /// @title Debridge DLN Helper
 /// @notice helps simulate Debridge DLN message relaying with hooks
 contract DebridgeDlnHelper is Test {
@@ -202,18 +200,15 @@ contract DebridgeDlnHelper is Test {
     /// @notice internal function to process a single destination message to relay
     /// @param args represents the help arguments
     function _help(HelpArgs memory args) internal {
-        console2.log("------------ _help");
         LocalVars memory vars;
         vars.originChainId = uint256(block.chainid);
         vars.prevForkId = vm.activeFork();
 
         uint256 count = args.logs.length;
-        console2.log("------------ count", count);
         for (uint256 i; i < count;) {
             // https://docs.debridge.finance/dln-the-debridge-liquidity-network-protocol/interacting-with-smart-contracts/placing-orders
             // CreatedOrder is the event selector for the createOrder event emitted by the DeBridge DLN contract
             if (args.logs[i].topics[0] == args.eventSelector) {
-                console2.log("------------ EVENT");
                 vm.selectFork(args.forkId);
 
                 (
@@ -247,16 +242,20 @@ contract DebridgeDlnHelper is Test {
                     if (token == address(0)) {
                         deal(receiver, logData.order.takeAmount);
 
-                        IExternalCallExecutor(receiver).onEtherReceived(
-                            logData.orderId, receiver, logData.order.externalCall
-                        );
+                        if (logData.order.externalCall.length > 0) {
+                            IExternalCallExecutor(receiver).onEtherReceived(
+                                logData.orderId, receiver, logData.order.externalCall
+                            );
+                        }
                     } else {
                         deal(token, receiver, logData.order.takeAmount);
 
                         // execute hooks
-                        IExternalCallExecutor(receiver).onERC20Received(
-                            logData.orderId, token, logData.order.takeAmount, receiver, logData.order.externalCall
-                        );
+                        if (logData.order.externalCall.length > 0) {
+                            IExternalCallExecutor(receiver).onERC20Received(
+                                logData.orderId, token, logData.order.takeAmount, receiver, logData.order.externalCall
+                            );
+                        }
                     }
                 }
             }
