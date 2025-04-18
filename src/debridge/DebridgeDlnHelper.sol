@@ -5,11 +5,13 @@ pragma solidity >=0.8.0;
 import "forge-std/Test.sol";
 import {IExternalCallExecutor} from "./interfaces/IExternalCallExecutor.sol";
 
+import "forge-std/console2.sol";
+
 /// @title Debridge DLN Helper
 /// @notice helps simulate Debridge DLN message relaying with hooks
 contract DebridgeDlnHelper is Test {
     bytes32 constant DlnOrderCreated = keccak256(
-        "CreatedOrder((uint64,bytes,uint256,bytes,uint256,uint256,bytes,uint256,bytes,bytes,bytes,bytes,bytes,bytes),bytes32,bytes,uint256,uint256,uint32)"
+        "CreatedOrder((uint64,bytes,uint256,bytes,uint256,uint256,bytes,uint256,bytes,bytes,bytes,bytes,bytes,bytes),bytes32,bytes,uint256,uint256,uint32,bytes)"
     );
 
     /// @dev  Struct representing an order.
@@ -75,6 +77,7 @@ contract DebridgeDlnHelper is Test {
         uint256 nativeFixFee;
         uint256 percentFee;
         uint32 reeferralCode;
+        bytes metadata;
     }
 
     //////////////////////////////////////////////////////////////
@@ -199,15 +202,18 @@ contract DebridgeDlnHelper is Test {
     /// @notice internal function to process a single destination message to relay
     /// @param args represents the help arguments
     function _help(HelpArgs memory args) internal {
+        console2.log("------------ _help");
         LocalVars memory vars;
         vars.originChainId = uint256(block.chainid);
         vars.prevForkId = vm.activeFork();
 
         uint256 count = args.logs.length;
+        console2.log("------------ count", count);
         for (uint256 i; i < count;) {
             // https://docs.debridge.finance/dln-the-debridge-liquidity-network-protocol/interacting-with-smart-contracts/placing-orders
             // CreatedOrder is the event selector for the createOrder event emitted by the DeBridge DLN contract
             if (args.logs[i].topics[0] == args.eventSelector) {
+                console2.log("------------ EVENT");
                 vm.selectFork(args.forkId);
 
                 (
@@ -216,15 +222,17 @@ contract DebridgeDlnHelper is Test {
                     bytes memory affiliateFee,
                     uint256 nativeFixFee,
                     uint256 percentFee,
-                    uint32 reeferralCode
-                ) = abi.decode(args.logs[i].data, (Order, bytes32, bytes, uint256, uint256, uint32));
+                    uint32 reeferralCode,
+                    bytes memory metadata
+                ) = abi.decode(args.logs[i].data, (Order, bytes32, bytes, uint256, uint256, uint32, bytes));
                 DebridgeLogData memory logData = DebridgeLogData({
                     order: order,
                     orderId: orderId,
                     affiliateFee: affiliateFee,
                     nativeFixFee: nativeFixFee,
                     percentFee: percentFee,
-                    reeferralCode: reeferralCode
+                    reeferralCode: reeferralCode,
+                    metadata: metadata
                 });
 
                 if (order.takeChainId == args.destinationChainId) {
