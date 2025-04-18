@@ -47,3 +47,4 @@ interface IDlnSource {
 
     function globalFixedNativeFee() external view returns (uint256);
 }
+
