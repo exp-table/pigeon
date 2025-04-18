@@ -7,6 +7,8 @@ import "forge-std/Test.sol";
 import {DebridgeHelper} from "src/debridge/DebridgeHelper.sol";
 import {IDebridgeGate} from "src/debridge/interfaces/IDebridgeGate.sol";
 
+import "forge-std/console2.sol";
+
 contract DebridgeHelperTest is Test {
     DebridgeHelper debridgeHelper;
 

@@ -357,6 +357,7 @@ contract WormholeAutomaticRelayerHelperTest is Test {
             messageKeys,
             1
         );
+        vm.stopPrank();
 
         wormholeHelper.helpWithCctpAndWormhole(
             L1_CHAIN_ID,
@@ -366,7 +367,6 @@ contract WormholeAutomaticRelayerHelperTest is Test {
             0xF3be9355363857F3e001be68856A2f96b4C39Ba9,
             vm.getRecordedLogs()
         );
-        vm.stopPrank();
 
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(USDC_POLYGON.balanceOf(address(cctpTarget)), 100e6);

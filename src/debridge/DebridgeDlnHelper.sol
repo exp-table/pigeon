@@ -5,8 +5,6 @@ pragma solidity >=0.8.0;
 import "forge-std/Test.sol";
 import {IExternalCallExecutor} from "./interfaces/IExternalCallExecutor.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IDlnDestination, Order} from "./interfaces/IDlnDestination.sol";
 
 /// @title Debridge DLN Helper
@@ -17,10 +15,6 @@ contract DebridgeDlnHelper is Test {
     );
 
     address constant TAKER_ADDRESS = 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf;
-    uint256 constant TAKER_PRIVATE_KEY = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
-
-    bytes32 constant PERMIT_TYPEHASH =
-        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     struct HelpArgs {
         address dlnSource;
@@ -206,29 +200,20 @@ contract DebridgeDlnHelper is Test {
                     address unlockAuthority = takerAddress;
                     uint256 fulfillAmount = order.takeAmount;
                     address tokenAddress = address(bytes20(order.takeTokenAddress));
-                    bytes memory permitEnvelope;
+                    bytes memory permitEnvelope = ""; // Always empty now
                     uint256 msgValue = 0;
 
                     if (tokenAddress == address(0)) {
+                        // Native token transfer
                         msgValue = fulfillAmount;
                         vm.deal(takerAddress, takerAddress.balance + msgValue);
                     } else {
-                        vm.deal(tokenAddress, takerAddress, fulfillAmount);
-                        bytes32 domainSeparator = IERC20Permit(tokenAddress).DOMAIN_SEPARATOR();
-                        uint256 nonce = IERC20Permit(tokenAddress).nonces(takerAddress);
-                        uint256 deadline = block.timestamp + 1 hours;
-
-                        bytes32 permitStructHash = keccak256(
-                            abi.encode(
-                                PERMIT_TYPEHASH, takerAddress, dlnDestinationAddress, fulfillAmount, nonce, deadline
-                            )
-                        );
-
-                        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, permitStructHash));
-
-                        (uint8 v, bytes32 r, bytes32 s) = vm.sign(TAKER_PRIVATE_KEY, digest);
-
-                        permitEnvelope = abi.encodePacked(r, s, v);
+                        // ERC20 token transfer - Use approve instead of permit
+                        // Ensure taker has the tokens
+                        deal(tokenAddress, takerAddress, fulfillAmount);
+                        // Prank as taker to approve the DlnDestination contract
+                        vm.prank(takerAddress);
+                        IERC20(tokenAddress).approve(dlnDestinationAddress, fulfillAmount);
                     }
 
                     vm.prank(takerAddress, takerAddress);
