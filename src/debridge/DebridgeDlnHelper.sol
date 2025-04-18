@@ -218,7 +218,7 @@ contract DebridgeDlnHelper is Test {
 
                     vm.prank(takerAddress, takerAddress);
                     IDlnDestination(dlnDestinationAddress).fulfillOrder{value: msgValue}(
-                        order, fulfillAmount, orderId, permitEnvelope, unlockAuthority, address(0)
+                        order, fulfillAmount, orderId, permitEnvelope, unlockAuthority, takerAddress
                     );
 
                     vm.selectFork(vars.prevForkId);

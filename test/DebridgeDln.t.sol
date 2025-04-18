@@ -21,7 +21,7 @@ contract SampleExecutor is IExternalCallExecutor {
     bytes public lastPayload;
     uint256 public lastReceivedValue;
 
-    event Log(bool callSucceeded, uint256 transferredAmount, uint256 expectedAmount);
+    event Log(bool callSucceeded, uint256 transferredAmount, uint256 counter);
     // Allow receiving ETH
 
     receive() external payable {}
@@ -34,19 +34,17 @@ contract SampleExecutor is IExternalCallExecutor {
         external
         payable
         override
-        returns (bool callSucceeded, bytes memory)
+        returns (bool callSucceeded, bytes memory /*nothing*/ )
     {
         lastOrderId = _orderId;
         lastFallbackAddress = _fallbackAddress;
         lastPayload = _payload;
         lastReceivedValue = msg.value; // Amount received by *this* contract from adapter
 
-        // uint256 expectedAmount = abi.decode(_payload, (uint256));
-
         counter++;
         callSucceeded = true;
 
-        emit Log(callSucceeded, msg.value, 0);
+        emit Log(callSucceeded, msg.value, counter);
     }
 
     /**
@@ -59,20 +57,17 @@ contract SampleExecutor is IExternalCallExecutor {
         uint256 _transferredAmount, // Amount received by *this* contract from adapter
         address _fallbackAddress,
         bytes memory _payload
-    ) external override returns (bool callSucceeded, bytes memory) {
+    ) external override returns (bool callSucceeded, bytes memory /*nothing*/ ) {
         lastOrderId = _orderId;
         lastToken = _token;
         lastAmount = _transferredAmount;
         lastFallbackAddress = _fallbackAddress;
         lastPayload = _payload;
 
-        //uint256 expectedAmount = abi.decode(_payload, (uint256));
-
         counter++;
         callSucceeded = true;
 
-        emit Log(callSucceeded, _transferredAmount, 0);
-        // callResult can be used to return data if needed
+        emit Log(callSucceeded, _transferredAmount, counter);
     }
 }
 
@@ -232,8 +227,8 @@ contract DebridgeDlnHelperTest is Test {
             executionFee: 0,
             fallbackAddress: address(0), // No fallback needed for this test
             payload: executorPayload,
-            allowDelayedExecution: true, // Allow fallback if needed, though test expects direct execution
-            requireSuccessfullExecution: false // Don't revert outer tx if executor fails (though we assert success
+            allowDelayedExecution: false, // Allow fallback if needed, though test expects direct execution
+            requireSuccessfullExecution: true // Don't revert outer tx if executor fails (though we assert success
                 // later)
         });
 
@@ -302,8 +297,8 @@ contract DebridgeDlnHelperTest is Test {
             executionFee: 0,
             fallbackAddress: address(0),
             payload: executorPayload,
-            allowDelayedExecution: true,
-            requireSuccessfullExecution: false
+            allowDelayedExecution: false,
+            requireSuccessfullExecution: true
         });
 
         // 3. Prepend version byte (1) to the encoded envelope
