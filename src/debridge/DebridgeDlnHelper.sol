@@ -25,14 +25,27 @@ contract DebridgeDlnHelper is Test {
         Vm.Log[] logs;
     }
 
-    struct LocalVars {
-        uint256 prevForkId;
-        uint256 originChainId;
-        uint256 destinationChainId;
-        DebridgeLogData logData;
+    struct DebridgeLogData {
+        Order order;
+        bytes32 orderId;
+        bytes affiliateFee;
+        uint256 nativeFixFee;
+        uint256 percentFee;
+        uint32 reeferralCode;
+        bytes metadata;
     }
 
-    struct DebridgeLogData {
+    struct HelpLocalVars {
+        uint256 prevForkId;
+        uint256 originChainId;
+        address dlnDestination;
+        address takerAddress;
+        address unlockAuthority;
+        uint256 fulfillAmount;
+        address tokenAddress;
+        bytes permitEnvelope;
+        uint256 msgValue;
+        DebridgeLogData logData;
         Order order;
         bytes32 orderId;
         bytes affiliateFee;
@@ -164,61 +177,65 @@ contract DebridgeDlnHelper is Test {
     /// @notice internal function to process a single destination message to relay
     /// @param args represents the help arguments
     function _help(HelpArgs memory args) internal {
-        LocalVars memory vars;
+        HelpLocalVars memory vars;
         vars.originChainId = uint256(block.chainid);
         vars.prevForkId = vm.activeFork();
+        vars.dlnDestination = args.dlnDestination;
+        vars.takerAddress = TAKER_ADDRESS;
+        vars.unlockAuthority = vars.takerAddress; // Initially set unlockAuthority to takerAddress
+        vars.permitEnvelope = ""; // Always empty now
+        vars.msgValue = 0; // Initialize msgValue to 0
 
         uint256 count = args.logs.length;
         for (uint256 i; i < count;) {
             if (args.logs[i].emitter == args.dlnSource && args.logs[i].topics[0] == args.eventSelector) {
                 (
-                    Order memory order,
-                    bytes32 orderId,
-                    bytes memory affiliateFee,
-                    uint256 nativeFixFee,
-                    uint256 percentFee,
-                    uint32 reeferralCode,
-                    bytes memory metadata
+                    vars.order,
+                    vars.orderId,
+                    vars.affiliateFee,
+                    vars.nativeFixFee,
+                    vars.percentFee,
+                    vars.reeferralCode,
+                    vars.metadata
                 ) = abi.decode(args.logs[i].data, (Order, bytes32, bytes, uint256, uint256, uint32, bytes));
 
-                if (order.takeChainId == args.destinationChainId) {
+                if (vars.order.takeChainId == args.destinationChainId) {
                     vm.selectFork(args.forkId);
 
                     DebridgeLogData memory logData = DebridgeLogData({
-                        order: order,
-                        orderId: orderId,
-                        affiliateFee: affiliateFee,
-                        nativeFixFee: nativeFixFee,
-                        percentFee: percentFee,
-                        reeferralCode: reeferralCode,
-                        metadata: metadata
+                        order: vars.order,
+                        orderId: vars.orderId,
+                        affiliateFee: vars.affiliateFee,
+                        nativeFixFee: vars.nativeFixFee,
+                        percentFee: vars.percentFee,
+                        reeferralCode: vars.reeferralCode,
+                        metadata: vars.metadata
                     });
                     vars.logData = logData;
+                    vars.fulfillAmount = vars.order.takeAmount;
+                    vars.tokenAddress = address(bytes20(vars.order.takeTokenAddress));
 
-                    address dlnDestinationAddress = args.dlnDestination;
-                    address takerAddress = TAKER_ADDRESS;
-                    address unlockAuthority = takerAddress;
-                    uint256 fulfillAmount = order.takeAmount;
-                    address tokenAddress = address(bytes20(order.takeTokenAddress));
-                    bytes memory permitEnvelope = ""; // Always empty now
-                    uint256 msgValue = 0;
-
-                    if (tokenAddress == address(0)) {
+                    if (vars.tokenAddress == address(0)) {
                         // Native token transfer
-                        msgValue = fulfillAmount;
-                        vm.deal(takerAddress, takerAddress.balance + msgValue);
+                        vars.msgValue = vars.fulfillAmount;
+                        vm.deal(vars.takerAddress, vars.takerAddress.balance + vars.msgValue);
                     } else {
                         // ERC20 token transfer - Use approve instead of permit
                         // Ensure taker has the tokens
-                        deal(tokenAddress, takerAddress, fulfillAmount);
+                        deal(vars.tokenAddress, vars.takerAddress, vars.fulfillAmount);
                         // Prank as taker to approve the DlnDestination contract
-                        vm.prank(takerAddress);
-                        IERC20(tokenAddress).approve(dlnDestinationAddress, fulfillAmount);
+                        vm.prank(vars.takerAddress);
+                        IERC20(vars.tokenAddress).approve(vars.dlnDestination, vars.fulfillAmount);
                     }
 
-                    vm.prank(takerAddress, takerAddress);
-                    IDlnDestination(dlnDestinationAddress).fulfillOrder{value: msgValue}(
-                        order, fulfillAmount, orderId, permitEnvelope, unlockAuthority, takerAddress
+                    vm.prank(vars.takerAddress, vars.takerAddress);
+                    IDlnDestination(vars.dlnDestination).fulfillOrder{value: vars.msgValue}(
+                        vars.order,
+                        vars.fulfillAmount,
+                        vars.orderId,
+                        vars.permitEnvelope,
+                        vars.unlockAuthority,
+                        vars.takerAddress
                     );
 
                     vm.selectFork(vars.prevForkId);
