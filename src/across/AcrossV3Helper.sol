@@ -6,14 +6,13 @@ import "forge-std/Test.sol";
 import {IAcrossSpokePoolV3} from "./interfaces/IAcrossSpokePoolV3.sol";
 import {IERC20} from "./interfaces/IERC20.sol";
 
-
 /// @title AcrossV3 Helper
 /// @notice helps simulate AcrossV3 message relaying
 contract AcrossV3Helper is Test {
     bytes32 constant V3FundsDeposited = keccak256(
         "V3FundsDeposited(address,address,uint256,uint256,uint256,uint32,uint32,uint32,uint32,address,address,address,bytes)"
     );
-    
+
     bytes32 constant FundsDeposited = keccak256(
         "FundsDeposited(bytes32,bytes32,uint256,uint256,uint256,uint256,uint32,uint32,uint32,bytes32,bytes32,bytes32,bytes)"
     );
@@ -136,10 +135,11 @@ contract AcrossV3Helper is Test {
             // V3FundsDeposited is the event selector for the V3FundsDeposited event emitted by the SpokePool contract
             // Relayers should note that all deposits in V3 are associated with V3FundsDeposited events
             // and must be filled using the fillV3Relay function of the SpokePool contract.
-            if ( (args.logs[i].topics[0] == FundsDeposited || args.logs[i].topics[0] == V3FundsDeposited) && args.logs[i].emitter == args.sourceSpokePool) {
+            if (
+                (args.logs[i].topics[0] == FundsDeposited || args.logs[i].topics[0] == V3FundsDeposited)
+                    && args.logs[i].emitter == args.sourceSpokePool
+            ) {
                 vars.destinationChainId = uint256(args.logs[i].topics[1]);
-
-
 
                 if (vars.destinationChainId == args.destinationChainId) {
                     vars.logData = _decodeLogData(args.logs[i]);

@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-
 interface IExternalCallExecutor {
     /**
      * @notice Handles the receipt of Ether to the contract, then validates and executes a function call.

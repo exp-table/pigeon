@@ -352,7 +352,6 @@ contract WormholeHelper is Test {
         v.additionalVAAs = new bytes[](v.indicesCache.length - 1);
         v.currIndex;
 
-
         if (v.indicesCache.length > 1 && expDstAddress != address(0)) {
             for (uint256 j; j < v.indicesCache.length; j++) {
                 log = logs[v.indicesCache[j]];
