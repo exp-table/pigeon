@@ -199,91 +199,23 @@ contract AcrossV3HelperTest is Test {
 
     function testAcrossWithGasLimit() external {
         vm.selectFork(L1_FORK_ID);
-        vm.warp(1736349707);
-
-        vm.startBroadcast();
 
         vm.recordLogs();
-        _someCrossChainFunctionInYourContract(L1_spokePool, POLYGON_ID);
-
-        vm.stopBroadcast();
-
+        _manyCrossChainFunctionInYourContract();
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        console.log("1");
-        Vm.Log memory log = logs[0];
-        console.log("2");
+        uint256[] memory refundChainIds = new uint256[](2);
 
-        uint32 depositId = uint32(uint256(log.topics[2]));
+        refundChainIds[0] = L1_ID;
+        refundChainIds[1] = L1_ID;
 
-        console.log("3");
-
-        IAcrossSpokePoolV3.V3RelayData memory relay = IAcrossSpokePoolV3.V3RelayData({
-            depositor:           address(this),
-            recipient:           address(target),
-            exclusiveRelayer:    address(0),
-            inputToken:          0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,
-            outputToken:         0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359,
-            inputAmount:         12,
-            outputAmount:        12,
-            originChainId:       L1_ID, 
-            depositId:           depositId,
-            fillDeadline:        uint32(block.timestamp),
-            exclusivityDeadline: uint32(block.timestamp + 10 minutes),
-            message:             abi.encode(uint256(12))
-        });
-
-        bytes memory expectedCalldata = abi.encodeWithSelector(
-            IAcrossSpokePoolV3.fillV3Relay.selector,
-            relay,
-            L1_ID
+        acrossV3Helper.help(
+            L1_spokePool, allDstSpokePools, RELAYER, 0, allDstForks, allDstChainIds, refundChainIds, logs
         );
 
-        uint256 gasLimit = 680_000;
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(target.amount(), 12);
 
-        vm.expectCall(
-            POLYGON_spokePool,
-            0,
-            uint64(gasLimit),
-            expectedCalldata
-        );
-
-        acrossV3Helper.help(L1_spokePool, POLYGON_spokePool, RELAYER, 0, POLYGON_FORK_ID, POLYGON_ID, L1_ID, logs, gasLimit);
+        vm.selectFork(ARBITRUM_FORK_ID);
+        assertEq(altTarget.amount(), 21);
     }
-
-    /// Builds the calldata that `fillV3Relay()` must receive.
-    // function _buildFillCalldata(
-    //     Vm.Log      memory log,           // original FundsDeposited / V3FundsDeposited
-    //     address     originTokenRecipient, // vars.logData.recipient
-    //     address     exclusiveRelayer,
-    //     address     inputToken,
-    //     address     outputToken,
-    //     uint256     inputAmount,
-    //     uint256     outputAmount,
-    //     uint256     originChainId,
-    //     uint32      fillDeadline,
-    //     uint32      exclusivityDeadline,
-    //     bytes       memory message,
-    //     uint256     refundChainId
-    // ) internal pure returns (bytes memory) {
-    //     IAcrossSpokePoolV3.V3RelayData memory relayData = IAcrossSpokePoolV3.V3RelayData({
-    //         depositor: address(uint160(uint256(log.topics[2]))),
-    //         recipient: originTokenRecipient,
-    //         exclusiveRelayer: exclusiveRelayer,
-    //         inputToken: inputToken,
-    //         outputToken: outputToken,
-    //         inputAmount: inputAmount,
-    //         outputAmount: outputAmount,
-    //         originChainId: originChainId,
-    //         depositId: uint32(uint256(log.topics[1])),
-    //         fillDeadline: fillDeadline,
-    //         exclusivityDeadline: exclusivityDeadline,
-    //         message: message
-    //     });
-
-    //     return abi.encodeWithSelector(
-    //         IAcrossSpokePoolV3.fillV3Relay.selector,
-    //         relayData,
-    //         refundChainId
-    //     );
-    // }
 }
