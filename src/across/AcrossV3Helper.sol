@@ -87,6 +87,40 @@ contract AcrossV3Helper is Test {
         );
     }
 
+    /// @notice helps process a single destination message to relay
+    /// @param sourceSpokePool represents the across spoke pool on the source chain
+    /// @param destinationSpokePool represents the across spoke pool on the destination chain
+    /// @param relayer represents the relayer address
+    /// @param warpTimestamp represents the warp timestamp
+    /// @param forkId represents the destination chain fork id
+    /// @param refundChainId represents the refund chain id
+    /// @param gasLimit represents the gas limit
+    function help(
+        address sourceSpokePool,
+        address destinationSpokePool,
+        address relayer,
+        uint256 warpTimestamp,
+        uint256 forkId,
+        uint256 destinationChainId,
+        uint256 refundChainId,
+        Vm.Log[] calldata logs,
+        uint256 gasLimit
+    ) external {
+        _help(
+            HelpArgs({
+                sourceSpokePool: sourceSpokePool,
+                destinationSpokePool: destinationSpokePool,
+                relayer: relayer,
+                forkId: forkId,
+                destinationChainId: destinationChainId,
+                refundChainId: refundChainId,
+                warpTimestamp: warpTimestamp,
+                logs: logs
+            }),
+            gasLimit
+        );
+    }
+
     struct HelpArgs {
         address sourceSpokePool;
         address destinationSpokePool;
@@ -150,6 +184,62 @@ contract AcrossV3Helper is Test {
                     IERC20(vars.logData.outputToken).approve(args.destinationSpokePool, vars.logData.outputAmount);
 
                     IAcrossSpokePoolV3(args.destinationSpokePool).fillV3Relay(
+                        IAcrossSpokePoolV3.V3RelayData({
+                            depositor: address(uint160(uint256(args.logs[i].topics[2]))),
+                            recipient: vars.logData.recipient,
+                            exclusiveRelayer: vars.logData.exclusiveRelayer,
+                            inputToken: vars.logData.inputToken,
+                            outputToken: vars.logData.outputToken,
+                            inputAmount: vars.logData.inputAmount,
+                            outputAmount: vars.logData.outputAmount,
+                            originChainId: vars.originChainId,
+                            depositId: uint32(uint256(args.logs[i].topics[1])),
+                            fillDeadline: vars.logData.fillDeadline,
+                            exclusivityDeadline: vars.logData.exclusivityDeadline,
+                            message: vars.logData.message
+                        }),
+                        args.refundChainId
+                    );
+                }
+            }
+        }
+        vm.stopBroadcast();
+        vm.selectFork(vars.prevForkId);
+    }
+
+    /// @notice internal function to process a single destination message to relay
+    /// @param args represents the help arguments
+    /// @param gasLimit represents the gas limit
+    function _help(HelpArgs memory args, uint256 gasLimit) internal {
+        LocalVars memory vars;
+        vars.originChainId = uint256(block.chainid);
+        vars.prevForkId = vm.activeFork();
+
+        vm.selectFork(args.forkId);
+        if (args.warpTimestamp > 0) {
+            vm.warp(args.warpTimestamp);
+        }
+        vm.startBroadcast(args.relayer);
+        for (uint256 i; i < args.logs.length; i++) {
+            // https://docs.across.to/introduction/migration-guides/migration-from-v2-to-v3
+            // V3FundsDeposited is the event selector for the V3FundsDeposited event emitted by the SpokePool contract
+            // Relayers should note that all deposits in V3 are associated with V3FundsDeposited events
+            // and must be filled using the fillV3Relay function of the SpokePool contract.
+            if (
+                (args.logs[i].topics[0] == FundsDeposited || args.logs[i].topics[0] == V3FundsDeposited)
+                    && args.logs[i].emitter == args.sourceSpokePool
+            ) {
+                vars.destinationChainId = uint256(args.logs[i].topics[1]);
+
+                if (vars.destinationChainId == args.destinationChainId) {
+                    vars.logData = _decodeLogData(args.logs[i]);
+
+                    assertEq(vars.destinationChainId, args.destinationChainId);
+                    deal(vars.logData.outputToken, args.relayer, vars.logData.outputAmount);
+
+                    IERC20(vars.logData.outputToken).approve(args.destinationSpokePool, vars.logData.outputAmount);
+
+                    IAcrossSpokePoolV3(args.destinationSpokePool).fillV3Relay{gas: gasLimit}(
                         IAcrossSpokePoolV3.V3RelayData({
                             depositor: address(uint160(uint256(args.logs[i].topics[2]))),
                             recipient: vars.logData.recipient,

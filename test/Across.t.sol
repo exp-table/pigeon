@@ -196,4 +196,26 @@ contract AcrossV3HelperTest is Test {
         vm.selectFork(POLYGON_FORK_ID);
         assertEq(target.amount(), 12);
     }
+
+    function testAcrossWithGasLimit() external {
+        vm.selectFork(L1_FORK_ID);
+
+        vm.recordLogs();
+        _manyCrossChainFunctionInYourContract();
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        uint256[] memory refundChainIds = new uint256[](2);
+
+        refundChainIds[0] = L1_ID;
+        refundChainIds[1] = L1_ID;
+
+        acrossV3Helper.help(
+            L1_spokePool, allDstSpokePools, RELAYER, 0, allDstForks, allDstChainIds, refundChainIds, logs
+        );
+
+        vm.selectFork(POLYGON_FORK_ID);
+        assertEq(target.amount(), 12);
+
+        vm.selectFork(ARBITRUM_FORK_ID);
+        assertEq(altTarget.amount(), 21);
+    }
 }
