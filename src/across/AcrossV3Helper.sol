@@ -103,6 +103,7 @@ contract AcrossV3Helper is Test {
         uint256 forkId,
         uint256 destinationChainId,
         uint256 refundChainId,
+        Vm.Log[] calldata logs,
         uint256 gasLimit
     ) external {
         _help(
@@ -114,7 +115,7 @@ contract AcrossV3Helper is Test {
                 destinationChainId: destinationChainId,
                 refundChainId: refundChainId,
                 warpTimestamp: warpTimestamp,
-                logs: new Vm.Log[](0)
+                logs: logs
             }),
             gasLimit
         );
