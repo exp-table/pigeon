@@ -29,6 +29,7 @@ By doing near mainnet testing, developers can quickly check sender authenticatio
 | Wormhole    |      ✅      |   |
 | Stargate  |      ✅      |   |
 | Across    |      ✅      |   |
+| CCIP      |      ✅      | ✅  |
 ## Getting Started
 
 ### Installation
@@ -64,6 +65,23 @@ _someCrossChainFunctionInYourContract(L2_DOMAIN, TypeCasts.addressToBytes32(addr
 Vm.Log[] memory logs = vm.getRecordedLogs();
 hyperlaneHelper.helpWithEstimates(L1_Mailbox, L2_HLMailbox, L2_FORK_ID, logs);
 ```
+
+CCIP (Chainlink CCIP — supports both 1.5 `CCIPSendRequested` and 1.6 `CCIPMessageSent` events):
+
+```solidity
+vm.recordLogs();
+_yourCcipSendOnSourceChain(DST_CHAIN_SELECTOR, address(target), data);
+Vm.Log[] memory logs = vm.getRecordedLogs();
+ccipHelper.help(CcipHelper.HelpArgs({
+    dstForkId: DST_FORK_ID,
+    dstRouter: DST_ROUTER,
+    expDstChainSelector: DST_CHAIN_SELECTOR,
+    srcOnRamp: address(0), // optional emitter filter; 0 = accept any OnRamp
+    logs: logs
+}));
+```
+
+`helpWithEstimates(...)` additionally emits `ccipFeePaid`, `ccipFeeToken`, (and `ccipFeeValueJuels` for 1.6) decoded from the source emission. The helper invokes the receiver via `Router.routeMessage` from a prank as the resolved OffRamp, and credits destination tokens to the receiver via `deal()`. It does **not** exercise `TokenPool.releaseOrMint`, rate limits, RMN curse checks, or USDC CCTP attestations. CCIP 1.5 messages with non-empty `tokenAmounts` revert.
 
 To display estimations, run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to `true.`
 
