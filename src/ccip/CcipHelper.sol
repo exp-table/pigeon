@@ -4,12 +4,11 @@ pragma solidity >=0.8.0;
 /// library imports
 import "forge-std/Test.sol";
 
-/// chainlink imports
-import {Client} from "@chainlink-ccip/contracts/libraries/Client.sol";
-import {Internal} from "@chainlink-ccip/contracts/libraries/Internal.sol";
-import {IRouter} from "@chainlink-ccip/contracts/interfaces/IRouter.sol";
-import {IRouterClient} from "@chainlink-ccip/contracts/interfaces/IRouterClient.sol";
-import {IAny2EVMMessageReceiver} from "@chainlink-ccip/contracts/interfaces/IAny2EVMMessageReceiver.sol";
+/// local imports
+import {Client} from "./interfaces/Client.sol";
+import {Internal} from "./interfaces/Internal.sol";
+import {IRouter} from "./interfaces/IRouter.sol";
+import {IAny2EVMMessageReceiver} from "./interfaces/IAny2EVMMessageReceiver.sol";
 
 interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);

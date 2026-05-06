@@ -6,4 +6,4 @@
 solc_version = "0.8.28"   # Override for the solc version (setting this ignores `auto_detect_solc`)
 evm_version = "cancun"   
 via_ir = true
-remappings = ["ds-test/=lib/forge-std/lib/ds-test/src/","forge-std/=lib/forge-std/src/","solady/=lib/solady/","@chainlink-ccip/=lib/chainlink-ccip/chains/evm/"]
+remappings = ["ds-test/=lib/forge-std/lib/ds-test/src/","forge-std/=lib/forge-std/src/","solady/=lib/solady/"]
