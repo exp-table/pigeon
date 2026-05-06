@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 import "forge-std/Test.sol";
 
 import {LayerZeroHelper} from "src/layerzero/LayerZeroHelper.sol";
+import {IERC20} from "src/interfaces/IERC20.sol";
 
 interface IStargateRouter {
     struct lzTxObj {
@@ -23,14 +24,6 @@ interface IStargateRouter {
         bytes calldata _to,
         bytes calldata _payload
     ) external payable;
-}
-
-interface IERC20 {
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    function balanceOf(address account) external view returns (uint256);
-
-    function transfer(address to, uint256 amount) external returns (bool);
 }
 
 contract Target {
