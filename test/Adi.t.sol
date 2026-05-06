@@ -58,7 +58,9 @@ contract AdiHelperTest is Test {
     address constant ETH_CCIP_ROUTER = 0x80226fc0Ee2b096224EeAc085Bb9a8cba1146f7D;
     uint64 constant ETH_CCIP_CHAIN_SELECTOR = 5009297550715157269;
     address constant LZ_ENDPOINT_V2 = 0x1a44076050125825900e736c501f859c50fE728c;
-    address constant ETH_HL_MAILBOX = 0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70;
+    /// @dev Aave Labs Eth-side HL mailbox is a custom deployment, NOT the canonical
+    /// `0x35231d4c2D8B8ADcB5617A638A0c4548684c7C70`. Verified via the HL adapter's `HL_MAIL_BOX()` getter.
+    address constant ETH_HL_MAILBOX = 0xc005dc82818d67AF737725bD4bf75435d065D239;
     address constant ARB_HL_MAILBOX = 0x979Ca5202784112f4738403dBec5D0F3B9daabB9;
 
     uint256 constant ETH_CHAIN_ID = 1;
@@ -136,8 +138,8 @@ contract AdiHelperTest is Test {
         ICrossChainController(L2_CCC).forwardMessage(ETH_CHAIN_ID, address(targetEth), 200_000, abi.encode("hello-eth"));
         Vm.Log[] memory logs = vm.getRecordedLogs();
 
-        // Threshold for Eth-from-Arb is 2/N. Relay via 2 AMBs (CCIP + LZ V2); skip Hyperlane to avoid
-        // the over-delivery edge case described in `AdiHelper.helpMultiBridge` NatSpec.
+        // Relay via all 3 AMBs (CCIP + LZ V2 + Hyperlane). Threshold is 2/N — once met the envelope is `Delivered`
+        // and any subsequent adapter delivery just increments confirmations without re-executing the receiver.
         adiHelper.helpMultiBridge(
             AdiHelper.MultiBridgeArgs({
                 dstForkId: ETH_FORK_ID,
@@ -145,8 +147,8 @@ contract AdiHelperTest is Test {
                 dstCcipChainSelector: ETH_CCIP_CHAIN_SELECTOR,
                 srcCcipOnRamp: address(0),
                 dstLzEndpoint: LZ_ENDPOINT_V2,
-                srcHlMailbox: address(0),
-                dstHlMailbox: address(0),
+                srcHlMailbox: ARB_HL_MAILBOX,
+                dstHlMailbox: ETH_HL_MAILBOX,
                 logs: logs
             })
         );

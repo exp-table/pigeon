@@ -85,10 +85,12 @@ contract AdiHelper is Test {
 
     /// @notice Relay any multi-bridge consensus a.DI envelope (Arb → Eth canonical lane; future Arb → Op).
     /// @dev Each child helper self-filters from `args.logs`. Setting an endpoint to address(0) skips that AMB.
-    /// @dev OVER-DELIVERY CAVEAT: configure only as many AMBs as the destination CCC's consensus threshold (e.g.,
-    /// 2 of 3). Once the threshold is hit and the envelope transitions to `Delivered`, additional adapter deliveries
-    /// may revert with state-check errors that propagate out of this function. Pick the AMBs you want to relay via
-    /// (typically the threshold count) and leave the others at address(0).
+    /// @dev Over-delivery is fine: once the destination CCC's threshold is met the envelope transitions to
+    /// `Delivered`, and subsequent adapter deliveries just increment `confirmations` without re-executing the
+    /// receiver. The receive path through each adapter must succeed though — the per-adapter `onlyMailBox` /
+    /// `onlyEndpoint` / `onlyRouter` checks must match the prank target you pass in. Read each deployed adapter's
+    /// configured AMB endpoint via its public getter (e.g., `HL_MAIL_BOX()`, `LZ_ENDPOINT()`, `getRouter()`) — do
+    /// NOT hardcode canonical AMB addresses, since deployments may use custom AMB infrastructure.
     /// @param args the relay arguments
     function helpMultiBridge(MultiBridgeArgs memory args) external {
         if (args.dstCcipRouter != address(0)) {

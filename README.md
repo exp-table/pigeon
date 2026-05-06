@@ -112,7 +112,7 @@ adiHelper.helpMultiBridge(AdiHelper.MultiBridgeArgs({
 
 **Funding**: a.DI's `CrossChainController` must hold native to pay AMB fees. Caller MUST `vm.deal(address(L1_CCC), N ether)` BEFORE invoking `forwardMessage` — the helper does NOT fund the CCC.
 
-**Over-delivery**: configure only as many AMBs as the destination CCC's consensus threshold (e.g., 2 of 3). Once threshold is hit and the envelope transitions to `Delivered`, additional adapter deliveries can revert with state-check errors.
+**AMB endpoint addresses**: read each deployed adapter's configured AMB endpoint via its public getter (`HL_MAIL_BOX()`, `LZ_ENDPOINT()`, `getRouter()`) and pass that to `MultiBridgeArgs`. Do NOT hardcode canonical AMB addresses — deployments may use custom AMB infrastructure (different validator sets / ISMs / etc.).
 
 To display estimations, run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to `true.`
 
