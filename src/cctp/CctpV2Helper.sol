@@ -23,6 +23,9 @@ contract CctpV2Helper is Test {
     /// @dev address derived from TEST_ATTESTER_PK
     address public immutable testAttesterAddress;
 
+    /// @dev tracks (sourceDomain, nonce) pairs already relayed to prevent double-mint on replay
+    mapping(bytes32 => bool) private _processedMessages;
+
     //////////////////////////////////////////////////////////////
     //                      CONSTRUCTOR                         //
     //////////////////////////////////////////////////////////////
@@ -44,7 +47,16 @@ contract CctpV2Helper is Test {
     /// @param forkId the fork ID of the destination chain
     /// @param logs the recorded logs from source chain execution
     function help(uint32 expectedDestDomain, uint256 forkId, Vm.Log[] calldata logs) external {
-        _help(expectedDestDomain, forkId, logs);
+        _help(expectedDestDomain, forkId, logs, MESSAGE_TRANSMITTER_V2);
+    }
+
+    /// @notice relays CCTP messages to a single destination domain, filtering by emitter
+    /// @param expectedDestDomain the CCTP domain ID to filter for
+    /// @param forkId the fork ID of the destination chain
+    /// @param logs the recorded logs from source chain execution
+    /// @param emitter only process MessageSent logs from this address
+    function help(uint32 expectedDestDomain, uint256 forkId, Vm.Log[] calldata logs, address emitter) external {
+        _help(expectedDestDomain, forkId, logs, emitter);
     }
 
     /// @notice relays CCTP messages to multiple destination domains
@@ -54,7 +66,24 @@ contract CctpV2Helper is Test {
     function help(uint32[] memory expectedDestDomains, uint256[] memory forkIds, Vm.Log[] calldata logs) external {
         require(expectedDestDomains.length == forkIds.length, "CctpV2Helper: length mismatch");
         for (uint256 i; i < expectedDestDomains.length; ++i) {
-            _help(expectedDestDomains[i], forkIds[i], logs);
+            _help(expectedDestDomains[i], forkIds[i], logs, MESSAGE_TRANSMITTER_V2);
+        }
+    }
+
+    /// @notice relays CCTP messages to multiple destination domains, filtering by emitter
+    /// @param expectedDestDomains array of CCTP domain IDs to filter for
+    /// @param forkIds array of fork IDs corresponding to each destination
+    /// @param logs the recorded logs from source chain execution
+    /// @param emitter only process MessageSent logs from this address
+    function help(
+        uint32[] memory expectedDestDomains,
+        uint256[] memory forkIds,
+        Vm.Log[] calldata logs,
+        address emitter
+    ) external {
+        require(expectedDestDomains.length == forkIds.length, "CctpV2Helper: length mismatch");
+        for (uint256 i; i < expectedDestDomains.length; ++i) {
+            _help(expectedDestDomains[i], forkIds[i], logs, emitter);
         }
     }
 
@@ -63,16 +92,27 @@ contract CctpV2Helper is Test {
     //////////////////////////////////////////////////////////////
 
     /// @notice processes logs and relays matching CCTP messages to the destination fork
-    function _help(uint32 expectedDestDomain, uint256 forkId, Vm.Log[] memory logs) internal {
+    function _help(uint32 expectedDestDomain, uint256 forkId, Vm.Log[] memory logs, address emitter) internal {
         uint256 prevForkId = vm.activeFork();
 
         for (uint256 i; i < logs.length; i++) {
+            /// skip anonymous events / log0 (no topics)
+            if (logs[i].topics.length == 0) continue;
             if (logs[i].topics[0] != MESSAGE_SENT_TOPIC) continue;
+            /// filter by emitter to avoid collisions with other MessageSent(bytes) events
+            if (logs[i].emitter != emitter) continue;
 
             bytes memory message = abi.decode(logs[i].data, (bytes));
             uint32 destDomain = _getDestinationDomain(message);
 
             if (destDomain != expectedDestDomain) continue;
+
+            /// dedup: skip if this (sourceDomain, nonce) was already relayed
+            uint32 sourceDomain = _getSourceDomain(message);
+            bytes32 nonce = _getNonce(message);
+            bytes32 msgKey = keccak256(abi.encode(sourceDomain, nonce));
+            if (_processedMessages[msgKey]) continue;
+            _processedMessages[msgKey] = true;
 
             /// switch to destination fork
             vm.selectFork(forkId);
@@ -161,6 +201,17 @@ contract CctpV2Helper is Test {
             nonce := mload(add(message, 44))
         }
         return nonce;
+    }
+
+    /// @notice extracts sourceDomain from CCTP message bytes
+    /// @dev offset 4, 4 bytes (after version[4])
+    function _getSourceDomain(bytes memory message) internal pure returns (uint32) {
+        require(message.length >= 8, "CctpV2Helper: message too short for srcDomain");
+        uint32 srcDomain;
+        assembly {
+            srcDomain := shr(224, mload(add(message, 36)))
+        }
+        return srcDomain;
     }
 
     /// @notice extracts destinationDomain from CCTP message bytes

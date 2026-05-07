@@ -140,6 +140,134 @@ contract CctpV2HelperTest is Test {
         assertGt(balance, 0, "USDC should have been minted for restricted relay");
     }
 
+    /// @notice test that anonymous events (zero topics) don't cause OOB revert
+    function testCctpV2HandlesZeroTopicLogs() external {
+        uint256 amount = 100e6;
+
+        vm.selectFork(ETH_FORK_ID);
+        _dealUsdc(USDC_ETH, ALICE, amount);
+
+        vm.startPrank(ALICE);
+        IERC20(USDC_ETH).approve(TOKEN_MESSENGER_V2, amount);
+
+        vm.recordLogs();
+
+        ITokenMessengerV2(TOKEN_MESSENGER_V2).depositForBurnWithHook(
+            amount,
+            DOMAIN_ARBITRUM,
+            bytes32(uint256(uint160(ALICE))),
+            USDC_ETH,
+            bytes32(0),
+            0,
+            2000,
+            abi.encode(uint256(1))
+        );
+        vm.stopPrank();
+
+        Vm.Log[] memory realLogs = vm.getRecordedLogs();
+
+        /// build a new array with a zero-topic log prepended
+        Vm.Log[] memory logs = new Vm.Log[](realLogs.length + 1);
+        /// anonymous event: zero topics, some data, arbitrary emitter
+        logs[0].topics = new bytes32[](0);
+        logs[0].data = abi.encode(uint256(42));
+        logs[0].emitter = address(0xDEAD);
+        for (uint256 i; i < realLogs.length; i++) {
+            logs[i + 1] = realLogs[i];
+        }
+
+        /// should not revert and should still relay the real message
+        vm.selectFork(ARB_FORK_ID);
+        uint256 balanceBefore = IERC20(USDC_ARB).balanceOf(ALICE);
+        vm.selectFork(ETH_FORK_ID);
+
+        cctpHelper.help(DOMAIN_ARBITRUM, ARB_FORK_ID, logs);
+
+        vm.selectFork(ARB_FORK_ID);
+        uint256 balanceAfter = IERC20(USDC_ARB).balanceOf(ALICE);
+        assertGt(balanceAfter, balanceBefore, "USDC should still be minted despite zero-topic log");
+    }
+
+    /// @notice test that replaying the same logs doesn't double-mint
+    function testCctpV2NoDuplicateRelay() external {
+        uint256 amount = 1000e6;
+
+        vm.selectFork(ETH_FORK_ID);
+        _dealUsdc(USDC_ETH, ALICE, amount);
+
+        vm.startPrank(ALICE);
+        IERC20(USDC_ETH).approve(TOKEN_MESSENGER_V2, amount);
+
+        vm.recordLogs();
+
+        ITokenMessengerV2(TOKEN_MESSENGER_V2).depositForBurnWithHook(
+            amount,
+            DOMAIN_ARBITRUM,
+            bytes32(uint256(uint160(ALICE))),
+            USDC_ETH,
+            bytes32(0),
+            0,
+            2000,
+            abi.encode(uint256(1))
+        );
+        vm.stopPrank();
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        /// first relay
+        cctpHelper.help(DOMAIN_ARBITRUM, ARB_FORK_ID, logs);
+
+        vm.selectFork(ARB_FORK_ID);
+        uint256 balanceAfterFirst = IERC20(USDC_ARB).balanceOf(ALICE);
+        vm.selectFork(ETH_FORK_ID);
+
+        /// second relay with the same logs — should be a no-op
+        cctpHelper.help(DOMAIN_ARBITRUM, ARB_FORK_ID, logs);
+
+        vm.selectFork(ARB_FORK_ID);
+        uint256 balanceAfterSecond = IERC20(USDC_ARB).balanceOf(ALICE);
+        assertEq(balanceAfterSecond, balanceAfterFirst, "Balance should not change on duplicate relay");
+    }
+
+    /// @notice test that emitter filter skips MessageSent from wrong address
+    function testCctpV2EmitterFilter() external {
+        uint256 amount = 100e6;
+
+        vm.selectFork(ETH_FORK_ID);
+        _dealUsdc(USDC_ETH, ALICE, amount);
+
+        vm.startPrank(ALICE);
+        IERC20(USDC_ETH).approve(TOKEN_MESSENGER_V2, amount);
+
+        vm.recordLogs();
+
+        ITokenMessengerV2(TOKEN_MESSENGER_V2).depositForBurnWithHook(
+            amount,
+            DOMAIN_ARBITRUM,
+            bytes32(uint256(uint160(ALICE))),
+            USDC_ETH,
+            bytes32(0),
+            0,
+            2000,
+            abi.encode(uint256(1))
+        );
+        vm.stopPrank();
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        vm.selectFork(ARB_FORK_ID);
+        uint256 balanceBefore = IERC20(USDC_ARB).balanceOf(ALICE);
+        vm.selectFork(ETH_FORK_ID);
+
+        /// use a bogus emitter filter — no logs should match
+        address bogusEmitter = address(0x1234);
+        cctpHelper.help(DOMAIN_ARBITRUM, ARB_FORK_ID, logs, bogusEmitter);
+
+        vm.selectFork(ARB_FORK_ID);
+        uint256 balanceAfter = IERC20(USDC_ARB).balanceOf(ALICE);
+        assertEq(balanceAfter, balanceBefore, "Balance should be unchanged when emitter doesn't match");
+    }
+
     /// @notice test that non-matching domain logs are skipped
     function testCctpV2SkipsNonMatchingDomain() external {
         uint256 amount = 100e6;
