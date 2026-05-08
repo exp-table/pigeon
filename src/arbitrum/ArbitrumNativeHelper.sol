@@ -53,8 +53,8 @@ contract ArbitrumNativeHelper is Test {
 
     /// @notice filter logs to those matching `InboxMessageDelivered`
     /// @param logs the recorded logs
-    /// @param length the expected number of matching logs
-    /// @return found array of matching logs
+    /// @param length the maximum number of matching logs to return
+    /// @return found array of matching logs, sized to the actual number found (≤ length)
     function findLogs(Vm.Log[] calldata logs, uint256 length) external pure returns (Vm.Log[] memory found) {
         found = new Vm.Log[](length);
         uint256 idx;
@@ -64,6 +64,10 @@ contract ArbitrumNativeHelper is Test {
                 found[idx++] = logs[i];
                 if (idx == length) break;
             }
+        }
+        // shrink array length to the actual match count so trailing zero entries aren't returned
+        assembly {
+            mstore(found, idx)
         }
     }
 
