@@ -30,6 +30,8 @@ By doing near mainnet testing, developers can quickly check sender authenticatio
 | Stargate  |      ✅      |   |
 | Across    |      ✅      |   |
 | CCIP      |      ✅      | ✅  |
+| a.DI      |      ✅      |    |
+| Arbitrum (native) |      ✅      |    |
 ## Getting Started
 
 ### Installation
@@ -82,6 +84,35 @@ ccipHelper.help(CcipHelper.HelpArgs({
 ```
 
 `helpWithEstimates(...)` additionally emits `ccipFeePaid`, `ccipFeeToken`, (and `ccipFeeValueJuels` for 1.6) decoded from the source emission. The helper invokes the receiver via `Router.routeMessage` from a prank as the resolved OffRamp, and credits destination tokens to the receiver via `deal()`. It does **not** exercise `TokenPool.releaseOrMint`, rate limits, RMN curse checks, or USDC CCTP attestations. CCIP 1.5 messages with non-empty `tokenAmounts` revert.
+
+a.DI (Aave Delivery Infrastructure — composes `CcipHelper`, `LayerZeroV2Helper`, `HyperlaneHelper`, and `ArbitrumNativeHelper`):
+
+```solidity
+// Eth → Arb (Arbitrum native bridge)
+adiHelper.helpEthToArb(AdiHelper.EthToArbArgs({
+    l2ForkId: ARB_FORK_ID,
+    l1Inbox: ARB_INBOX,
+    l1Bridge: ARB_BRIDGE,
+    expectedL1CCC: L1_CCC,
+    logs: logs
+}));
+
+// Arb → Eth (multi-bridge consensus — set address(0) on AMBs you want to skip)
+adiHelper.helpMultiBridge(AdiHelper.MultiBridgeArgs({
+    dstForkId: ETH_FORK_ID,
+    dstCcipRouter: ETH_CCIP_ROUTER,
+    dstCcipChainSelector: ETH_CCIP_CHAIN_SELECTOR,
+    srcCcipOnRamp: address(0),
+    dstLzEndpoint: LZ_ENDPOINT_V2,
+    srcHlMailbox: address(0), // skip Hyperlane on this lane
+    dstHlMailbox: address(0),
+    logs: logs
+}));
+```
+
+**Funding**: a.DI's `CrossChainController` must hold native to pay AMB fees. Caller MUST `vm.deal(address(L1_CCC), N ether)` BEFORE invoking `forwardMessage` — the helper does NOT fund the CCC.
+
+**AMB endpoint addresses**: read each deployed adapter's configured AMB endpoint via its public getter (`HL_MAIL_BOX()`, `LZ_ENDPOINT()`, `getRouter()`) and pass that to `MultiBridgeArgs`. Do NOT hardcode canonical AMB addresses — deployments may use custom AMB infrastructure (different validator sets / ISMs / etc.).
 
 To display estimations, run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to `true.`
 
