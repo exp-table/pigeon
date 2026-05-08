@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import {IERC20} from "src/across/interfaces/IERC20.sol";
+import {IERC20} from "src/interfaces/IERC20.sol";
 import "forge-std/Test.sol";
 
 import {DebridgeHelper} from "src/debridge/DebridgeHelper.sol";

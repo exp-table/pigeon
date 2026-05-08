@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 /// library imports
 import "forge-std/Test.sol";
 import {IAcrossSpokePoolV3} from "./interfaces/IAcrossSpokePoolV3.sol";
-import {IERC20} from "./interfaces/IERC20.sol";
+import {IERC20} from "../interfaces/IERC20.sol";
 
 /// @title AcrossV3 Helper
 /// @notice helps simulate AcrossV3 message relaying

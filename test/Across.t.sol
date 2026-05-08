@@ -8,7 +8,7 @@ import {console2} from "forge-std/console2.sol";
 import {AcrossV3Helper} from "src/across/AcrossV3Helper.sol";
 import {IAcrossSpokePoolV3} from "src/across/interfaces/IAcrossSpokePoolV3.sol";
 import {IAcrossV3Interpreter} from "src/across/interfaces/IAcrossV3Interpreter.sol";
-import {IERC20} from "src/across/interfaces/IERC20.sol";
+import {IERC20} from "src/interfaces/IERC20.sol";
 import {console} from "forge-std/console.sol";
 
 contract Target {

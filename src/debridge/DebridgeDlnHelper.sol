@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 /// library imports
 import "forge-std/Test.sol";
 import {IExternalCallExecutor} from "./interfaces/IExternalCallExecutor.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "../interfaces/IERC20.sol";
 import {IDlnDestination, Order} from "./interfaces/IDlnDestination.sol";
 
 /// @title Debridge DLN Helper
