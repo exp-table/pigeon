@@ -304,11 +304,22 @@ contract CcipHelper is Test {
     }
 
     /// @notice decode CCIP 1.5 sourceTokenData[i] = abi.encode(SourceTokenData) and extract the dest token address
+    /// @dev `destTokenAddress` is encoded by source pools as either a 32-byte abi-encoded address or a raw 20-byte
+    ///      address. abi.decode only accepts the 32-byte form, so the 20-byte form is read directly via assembly.
     function _decodeV15DestToken(bytes memory sourceTokenDataBytes) internal pure returns (address) {
         SourceTokenData memory s = abi.decode(sourceTokenDataBytes, (SourceTokenData));
         bytes memory destAddr = s.destTokenAddress;
-        if (destAddr.length != 32 && destAddr.length != 20) revert V15SourceTokenDataMalformed();
-        return abi.decode(destAddr, (address));
+        if (destAddr.length == 32) {
+            return abi.decode(destAddr, (address));
+        }
+        if (destAddr.length == 20) {
+            address result;
+            assembly {
+                result := shr(96, mload(add(destAddr, 32)))
+            }
+            return result;
+        }
+        revert V15SourceTokenDataMalformed();
     }
 
     /// @notice resolve newest OffRamp registered for sourceChainSelector via backwards iteration
@@ -324,6 +335,9 @@ contract CcipHelper is Test {
     }
 
     /// @notice decode CCIP `extraArgs` handling V2 tag, V1 tag, and empty-default
+    /// @dev The helper does NOT enforce CCIP's ordered execution semantics. Messages are delivered in log-emission
+    ///      order regardless of `allowOutOfOrderExecution`. Protocols depending on strict message ordering should
+    ///      test that separately.
     function _decodeExtraArgs(bytes memory extraArgs) internal pure returns (Client.GenericExtraArgsV2 memory) {
         if (extraArgs.length == 0) {
             return Client.GenericExtraArgsV2({gasLimit: DEFAULT_GAS_LIMIT, allowOutOfOrderExecution: false});
