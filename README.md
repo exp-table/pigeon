@@ -32,6 +32,9 @@ By doing near mainnet testing, developers can quickly check sender authenticatio
 | CCIP      |      ✅      | ✅  |
 | a.DI      |      ✅      |    |
 | Arbitrum (native) |      ✅      |    |
+| Relay     |      ✅      |    |
+| CCTP V2   |      ✅      |    |
+| Circle Gateway |      ✅      |    |
 ## Getting Started
 
 ### Installation
@@ -113,6 +116,29 @@ adiHelper.helpMultiBridge(AdiHelper.MultiBridgeArgs({
 **Funding**: a.DI's `CrossChainController` must hold native to pay AMB fees. Caller MUST `vm.deal(address(L1_CCC), N ether)` BEFORE invoking `forwardMessage` — the helper does NOT fund the CCC.
 
 **AMB endpoint addresses**: read each deployed adapter's configured AMB endpoint via its public getter (`HL_MAIL_BOX()`, `LZ_ENDPOINT()`, `getRouter()`) and pass that to `MultiBridgeArgs`. Do NOT hardcode canonical AMB addresses — deployments may use custom AMB infrastructure (different validator sets / ISMs / etc.).
+
+Circle Gateway (unified USDC balance — there is NO source-chain message to relay; the helper plays Circle's attestation signer):
+
+```solidity
+CircleGatewayHelper gw = new CircleGatewayHelper(0); // 0 = default test signer key
+vm.makePersistent(address(gw));                      // the helper is used on both forks
+
+// optional source-side realism: fund + deposit into GatewayWallet on the source fork
+gw.helpDeposit(ETH_FORK_ID, ETH_USDC, depositor, 1000e6);
+
+// describe the transfer (Gateway domains: Ethereum 0, Avalanche 1, OP 2, Arbitrum 3, Base 6, Polygon 7, ...)
+CircleGatewayHelper.TransferSpec memory spec =
+    gw.buildSpec(0, 3, ETH_USDC, ARB_USDC, depositor, recipient, destinationCaller, 1000e6, hookData);
+
+// mint on the destination fork through the REAL GatewayMinter (pranked as destinationCaller when set)
+CircleGatewayHelper.Attested memory a = gw.help(ARB_FORK_ID, spec);
+// or hand the signed payload to a destination adapter that calls gatewayMint itself
+gw.helpMintViaAdapter(ARB_FORK_ID, address(adapter), spec);
+// or just attest and drive gatewayMint yourself
+a = gw.attest(ARB_FORK_ID, specs);
+```
+
+`helpSet` / `helpMintViaAdapterSet` mint an `AttestationSet` (several specs, one atomic mint). `a.transferSpecHashes` are the minter's replay keys (`isTransferSpecHashUsed`). Attestations are EIP-191 (`personal_sign` over `keccak256(payload)`), valid for 1000 blocks from the destination fork's block; the minter's own checks (signer, expiry, domain, caller, token, replay, denylist, pause) all run for real.
 
 To display estimations, run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to `true.`
 
