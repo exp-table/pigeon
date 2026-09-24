@@ -120,8 +120,7 @@ adiHelper.helpMultiBridge(AdiHelper.MultiBridgeArgs({
 Circle Gateway (unified USDC balance — there is NO source-chain message to relay; the helper plays Circle's attestation signer):
 
 ```solidity
-CircleGatewayHelper gw = new CircleGatewayHelper(0); // 0 = default test signer key
-vm.makePersistent(address(gw));                      // the helper is used on both forks
+CircleGatewayHelper gw = new CircleGatewayHelper(0); // 0 = default test signer key; persistent across forks
 
 // optional source-side realism: fund + deposit into GatewayWallet on the source fork
 gw.helpDeposit(ETH_FORK_ID, ETH_USDC, depositor, 1000e6);
@@ -134,11 +133,11 @@ CircleGatewayHelper.TransferSpec memory spec =
 CircleGatewayHelper.Attested memory a = gw.help(ARB_FORK_ID, spec);
 // or hand the signed payload to a destination adapter that calls gatewayMint itself
 gw.helpMintViaAdapter(ARB_FORK_ID, address(adapter), spec);
-// or just attest and drive gatewayMint yourself
-a = gw.attest(ARB_FORK_ID, specs);
+// or just attest and drive gatewayMint yourself (optionally with an explicit maxBlockHeight)
+a = gw.helpAttest(ARB_FORK_ID, spec);
 ```
 
-`helpSet` / `helpMintViaAdapterSet` mint an `AttestationSet` (several specs, one atomic mint). `a.transferSpecHashes` are the minter's replay keys (`isTransferSpecHashUsed`). Attestations are EIP-191 (`personal_sign` over `keccak256(payload)`), valid for 1000 blocks from the destination fork's block; the minter's own checks (signer, expiry, domain, caller, token, replay, denylist, pause) all run for real.
+`helpSet` / `helpMintViaAdapterSet` / `helpAttestSet` use the `AttestationSet` wire format (several specs, one atomic mint; a set of one stays a set). `a.transferSpecHashes` are the minter's replay keys (`isTransferSpecHashUsed`). Attestations are EIP-191 (`personal_sign` over `keccak256(payload)`), valid through 1000 blocks from the destination fork's block by default; the minter's own checks (signer, expiry, domain, caller, token, replay, denylist, pause) all run for real. A reverting destination call restores your previously selected fork before re-raising.
 
 To display estimations, run the `npm install` and `npm run compile` commands from the [utils/scripts directory](./utils/scripts) before running your tests. Then run tests with the `--ffi` flag and `ENABLE_ESTIMATES` env variable set to `true.`
 
